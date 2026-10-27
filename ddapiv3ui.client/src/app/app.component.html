@@ -23,8 +23,17 @@
           <mat-form-field class="app-form-field-full-width">
             <mat-label>Api key</mat-label>
             <input matInput
+                   [type]="showApiKey ? 'text' : 'password'"
+                   autocomplete="off"
                    [(ngModel)]="apiKey"
                    (ngModelChange)="onApiKeyChange($event)">
+            <button mat-icon-button matSuffix type="button"
+                    aria-label="Show API key"
+                    [attr.aria-pressed]="showApiKey"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="showApiKey = !showApiKey">
+              <mat-icon>{{showApiKey ? 'visibility_off' : 'visibility'}}</mat-icon>
+            </button>
           </mat-form-field>
         </div>
 

@@ -26,6 +26,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   baseUrl: string = '';
   apiKey: string = 'xxxxxxxx';
+  showApiKey = false;
   endPoint!: EndPoint;
   coordinateSystems: any[] = [
     {
@@ -377,7 +378,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.result = { "@odata.context": this.baseUrl, "value": [], "@odata.nextLink": "" };
     this.requestHeaders = {
       headers: {
-        'X-Api-Key': this.apiKey,
+        'X-Api-Key': this.apiKey ? '********' : '',
         'Accept-Crs': this.coordinateSystem
       }
     };
@@ -420,7 +421,7 @@ export class AppComponent implements OnInit, OnDestroy {
   onApiKeyChange(args: any): void {
     this.requestHeaders = {
       headers: {
-        'X-Api-Key': this.apiKey,
+        'X-Api-Key': this.apiKey ? '********' : '',
         'Accept-Crs': this.coordinateSystem
       }
     };
@@ -438,7 +439,7 @@ export class AppComponent implements OnInit, OnDestroy {
   onCoordinateSystemChange(args: any): void {
     this.requestHeaders = {
       headers: {
-        'X-Api-Key': this.apiKey,
+        'X-Api-Key': this.apiKey ? '********' : '',
         'Accept-Crs': this.coordinateSystem
       }
     };
