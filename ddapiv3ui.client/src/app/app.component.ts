@@ -413,7 +413,8 @@ export class AppComponent implements OnInit, OnDestroy {
   //events
   onBaseUrlChange(args: any): void {
     this.apiKey = localStorage.getItem(this.baseUrl) ?? '';
-    this.storeBaseUrlAndApiKey();
+    this.showApiKey = false;
+    this.onApiKeyChange(this.apiKey);
     this.service.getMetaData(this.baseUrl, this.endPoint.property)
       .subscribe((result) => this.setMetaData(result));
   }
