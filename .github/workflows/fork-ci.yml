@@ -1,0 +1,83 @@
+# CI for this fork only: builds and tests the upstream master and the work branches,
+# so changes can be checked without installing Node/npm locally.
+# Runs on every push to the `ci` branch; re-run it from the Actions tab or with
+# `gh run rerun <id>`.
+name: Fork CI (build and test branches)
+
+on:
+  push:
+    branches: [ci]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.ref }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        ref:
+          - master
+          - fix/datetime-seconds
+          - feature/export-all-pages-csv
+          - feature/result-table
+          - feature/filter-usability
+          - feature/friendly-errors
+    defaults:
+      run:
+        working-directory: ddapiv3ui.client
+    steps:
+      - name: Check out ${{ matrix.ref }}
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ matrix.ref }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 20
+
+      - name: Install dependencies (from package-lock.json)
+        run: npm ci --no-audit --no-fund
+
+      - name: Build (production)
+        run: npx ng build --configuration production
+
+      - name: Add test configuration that is missing upstream (CI only)
+        run: |
+          if [ ! -f tsconfig.spec.json ]; then
+            cat > tsconfig.spec.json <<'EOF'
+          {
+            "extends": "./tsconfig.json",
+            "compilerOptions": {
+              "outDir": "./out-tsc/spec",
+              "types": ["jasmine", "node"]
+            },
+            "files": ["src/test.ts", "src/polyfills.ts"],
+            "include": ["src/**/*.spec.ts", "src/**/*.d.ts"]
+          }
+          EOF
+          fi
+          cat > karma.ci.conf.js <<'EOF'
+          const base = require('./karma.conf.js');
+          module.exports = function (config) {
+            base(config);
+            config.set({
+              browsers: ['ChromeHeadlessCI'],
+              customLaunchers: {
+                ChromeHeadlessCI: { base: 'ChromeHeadless', flags: ['--no-sandbox'] }
+              },
+              reporters: ['progress'],
+              singleRun: true,
+              autoWatch: false,
+              restartOnFileChange: false
+            });
+          };
+          EOF
+
+      - name: Unit tests (Karma, headless Chrome)
+        run: npx ng test --watch=false --karma-config=karma.ci.conf.js
