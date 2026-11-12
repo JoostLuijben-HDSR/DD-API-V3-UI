@@ -26,3 +26,14 @@ describe('fieldDisplayName', () => {
     expect(fieldDisplayName('Unknown/Field')).toBe('Unknown/Field');
   });
 });
+
+describe('field labels in English', () => {
+  it('gives English names', () => {
+    expect(fieldLabel('Parameter/MeasurementPackage', 'en')).toBe('Measurement package');
+    expect(fieldDisplayName('Foi.Code', 'en')).toBe('Measurement object (code) (Foi.Code)');
+  });
+
+  it('keeps Dutch as the default', () => {
+    expect(fieldLabel('Parameter/MeasurementPackage')).toBe('Meetpakket');
+  });
+});

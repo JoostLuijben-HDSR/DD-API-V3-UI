@@ -4,11 +4,19 @@
       <div class="row">
         <div class="col-1 gy-3">
           <img class="app-logo" src="../assets/dd-api-v3-ui-logo.svg" alt="DD-API UI" />
+          <mat-button-toggle-group class="app-language"
+                                   [value]="i18n.lang"
+                                   (change)="setLang($event.value)"
+                                   [attr.aria-label]="'header.language' | t">
+            @for (lang of langs; track lang) {
+            <mat-button-toggle [value]="lang">{{lang.toUpperCase()}}</mat-button-toggle>
+            }
+          </mat-button-toggle-group>
         </div>
         <div class="col gy-3">
           <mat-form-field appearance="fill"
                           class="app-form-field-full-width">
-            <mat-label>Base url</mat-label>
+            <mat-label>{{'header.baseUrl' | t}}</mat-label>
 
             <mat-select [(value)]="baseUrl"
                         (selectionChange)="onBaseUrlChange($event)">
@@ -21,7 +29,7 @@
 
         <div class="col gy-3">
           <mat-form-field class="app-form-field-full-width">
-            <mat-label>Api key</mat-label>
+            <mat-label>{{'header.apiKey' | t}}</mat-label>
             <input matInput
                    [(ngModel)]="apiKey"
                    (ngModelChange)="onApiKeyChange($event)">
@@ -31,7 +39,7 @@
         <div class="col-2 gy-3">
           <mat-form-field appearance="fill"
                           class="app-form-field-full-width">
-            <mat-label>Endpoint</mat-label>
+            <mat-label>{{'header.endPoint' | t}}</mat-label>
             <mat-select [(value)]="endPoint"
                         (selectionChange)="onEndPointChange($event)">
               @for(item of appSettings.endPoints; track item) {
@@ -44,7 +52,7 @@
         <div class="col-2 gy-3">
           <mat-form-field appearance="fill"
                           class="app-form-field-full-width">
-            <mat-label>Coördinatesystem</mat-label>
+            <mat-label>{{'header.coordinateSystem' | t}}</mat-label>
             <mat-select [(value)]="coordinateSystem"
                         (selectionChange)="onCoordinateSystemChange($event)">
               @for(item of coordinateSystems; track item) {
@@ -61,7 +69,7 @@
     <div class="col-2 gy-3">
       <mat-form-field appearance="fill"
                       class="app-form-field-full-width">
-        <mat-label>$top</mat-label>
+        <mat-label>{{'query.top' | t}}</mat-label>
         <mat-select [(value)]="pageSize"
                     (selectionChange)="generateUrl()">
           @for (option of pageSizeOptions; track option) {
@@ -74,7 +82,7 @@
     <div class="col-2 gy-3">
       <mat-form-field appearance="fill"
                       class="app-form-field-full-width">
-        <mat-label>$count</mat-label>
+        <mat-label>{{'query.count' | t}}</mat-label>
         <mat-select [(value)]="count"
                     (selectionChange)="generateUrl()">
           <mat-option [value]="null"></mat-option>
@@ -87,7 +95,7 @@
     <div class="col-8 gy-3">
       <mat-form-field appearance="fill"
                       class="app-form-field-full-width">
-        <mat-label>$select</mat-label>
+        <mat-label>{{'query.select' | t}}</mat-label>
         <mat-select multiple
                     [(value)]="selectProperties"
                     (selectionChange)="generateUrl()">
@@ -104,7 +112,7 @@
 
       <mat-expansion-panel [expanded]="true">
         <mat-expansion-panel-header>
-          <mat-panel-title>$filter ({{filterItems.length}})</mat-panel-title>
+          <mat-panel-title>{{'filter.title' | t: { count: filterItems.length } }}</mat-panel-title>
         </mat-expansion-panel-header>
 
         <!--<div class="row">
@@ -156,7 +164,7 @@
             @if (filterItem.propertyConverter.data?.inputType == null) {
             <mat-form-field appearance="fill"
                             class="app-form-field-full-width">
-              <mat-label>Property</mat-label>
+              <mat-label>{{'filter.property' | t}}</mat-label>
               <mat-select [(value)]="filterItem.property"
                           (selectionChange)="onFilterItemPropertyChange($event, filterItem, index)">
                 @for (property of properties; track property) {
@@ -211,6 +219,7 @@
                                    [endPoint]="endPoint.url"
                                    [inputTypeMapping]="inputTypeMapping"
                                    [filterItemChange$]="filterItemChange$"
+                                   [valueLabel]="'filter.value' | t"
                                    (valueChange)="generateUrl()">
             </app-filter-item-value>
           </div>
@@ -224,9 +233,9 @@
                 @if(index == filterItems.length - 2) {
                 <mat-option></mat-option>
                 }
-                <mat-option value="and">and</mat-option>
-                <mat-option value="or">or</mat-option>
-                <mat-option value="not">not</mat-option>
+                <mat-option value="and">{{'filter.and' | t}}</mat-option>
+                <mat-option value="or">{{'filter.or' | t}}</mat-option>
+                <mat-option value="not">{{'filter.not' | t}}</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -234,8 +243,8 @@
           <div class="col-auto">
             <button mat-icon-button
                     type="button"
-                    title="Remove this filter"
-                    aria-label="Remove this filter"
+                    [title]="'filter.remove' | t"
+                    [attr.aria-label]="'filter.remove' | t"
                     (click)="removeFilterItem(index)">
               <mat-icon>close</mat-icon>
             </button>
@@ -249,19 +258,19 @@
                     type="button"
                     (click)="addFilterItem()">
               <mat-icon>add</mat-icon>
-              ADD FILTER
+              {{'filter.add' | t}}
             </button>
           </div>
           @if (periodProperty) {
           <div class="col"></div>
           <div class="col-auto app-period-label">
-            Measurement period:
+            {{'period.label' | t}}
           </div>
           <div class="col-2">
             <mat-form-field appearance="fill"
                             class="app-form-field-full-width"
                             subscriptSizing="dynamic">
-              <mat-label>From</mat-label>
+              <mat-label>{{'period.from' | t}}</mat-label>
               <input matInput
                      type="date"
                      [(ngModel)]="periodFrom">
@@ -271,7 +280,7 @@
             <mat-form-field appearance="fill"
                             class="app-form-field-full-width"
                             subscriptSizing="dynamic">
-              <mat-label>To (inclusive)</mat-label>
+              <mat-label>{{'period.to' | t}}</mat-label>
               <input matInput
                      type="date"
                      [(ngModel)]="periodTo">
@@ -280,14 +289,14 @@
           <div class="col-auto">
             <button mat-stroked-button
                     type="button"
-                    title="Adds filters on PhenomenonTime/BeginPosition"
+                    [title]="'period.addTitle' | t"
                     (click)="addPeriodFilter()">
-              ADD PERIOD
+              {{'period.add' | t}}
             </button>
           </div>
           }
           @if (periodError) {
-          <div class="col-12 app-period-error">{{periodError}}</div>
+          <div class="col-12 app-period-error">{{periodError | t}}</div>
           }
         </div>
       </mat-expansion-panel>
@@ -299,7 +308,7 @@
     <div class="col-12">
       <mat-form-field appearance="fill"
                       class="app-form-field-full-width">
-        <mat-label>Url</mat-label>
+        <mat-label>{{'query.url' | t}}</mat-label>
         <textarea matInput
                   cdkTextareaAutosize
                   #autosize="cdkTextareaAutosize"
@@ -324,14 +333,14 @@
                     [disabled]="loadingResult"
                     color="primary"
                     (click)="get()">
-              GET
+              {{'action.get' | t}}
             </button>
           </div>
           @if (loadingResult) {
           <div class="col-auto">
             <button mat-raised-button
                     (click)="cancel()">
-              CANCEL
+              {{'action.cancel' | t}}
             </button>
           </div>
           }
@@ -342,7 +351,7 @@
                     [disabled]="!nextUrl || loadingResult"
                     color="primary"
                     (click)="getNext()">
-              NEXT
+              {{'action.next' | t}}
             </button>
           </div>
 
@@ -351,16 +360,16 @@
               <div class="col-auto">
                 <button mat-raised-button
                         [disabled]="loadingResult"
-                        title="Follow all next links and combine the pages into one result"
+                        [title]="'action.fetchAllTitle' | t"
                         (click)="fetchAll()">
-                  FETCH ALL PAGES
+                  {{'action.fetchAll' | t}}
                 </button>
               </div>
               <div class="col-2">
                 <mat-form-field appearance="fill"
                                 class="app-form-field-full-width"
                                 subscriptSizing="dynamic">
-                  <mat-label>Max. records</mat-label>
+                  <mat-label>{{'action.maxRecords' | t}}</mat-label>
                   <mat-select [(value)]="maxRecords"
                               [disabled]="loadingResult">
                     @for (option of maxRecordsOptions; track option) {
@@ -374,10 +383,10 @@
                 <mat-form-field appearance="fill"
                                 class="app-form-field-full-width"
                                 subscriptSizing="dynamic">
-                  <mat-label>CSV format</mat-label>
+                  <mat-label>{{'action.csvFormat' | t}}</mat-label>
                   <mat-select [(value)]="csvFormat">
                     @for (format of csvFormats; track format.value) {
-                    <mat-option [value]="format.value">{{format.text}}</mat-option>
+                    <mat-option [value]="format.value">{{format.textKey | t}}</mat-option>
                     }
                   </mat-select>
                 </mat-form-field>
@@ -386,9 +395,9 @@
                 <button mat-raised-button
                         color="primary"
                         [disabled]="loadingResult || resultRecordCount === 0"
-                        title="Download the records in the result as a CSV file"
+                        [title]="'action.downloadCsvTitle' | t"
                         (click)="downloadCsv()">
-                  DOWNLOAD CSV
+                  {{'action.downloadCsv' | t}}
                 </button>
               </div>
             </div>
@@ -400,19 +409,22 @@
                               [value]="fetchProgressPercent">
             </mat-progress-bar>
             <div class="app-result-status">
-              <span>Fetched {{fetchedCount | number}}</span>
-              @if (totalCount != null) {<span>&nbsp;of {{totalCount | number}}</span>}
-              <span>&nbsp;records&hellip;</span>
+              @if (totalCount != null) {
+              <span>{{'status.fetching' | t: { done: fetchedCount, total: totalCount } }}</span>
+              }
+              @else {
+              <span>{{'status.fetchingNoTotal' | t: { done: fetchedCount } }}</span>
+              }
             </div>
           </div>
           }
           @else if (result && resultRecordCount > 0) {
           <div class="col-12 app-result-status">
-            <span>{{resultRecordCount | number}} records in result</span>
-            @if (totalCount != null) {<span>, {{totalCount | number}} in total</span>}
+            <span>{{'status.inResult' | t: { count: resultRecordCount } }}</span>
+            @if (totalCount != null) {<span>{{'status.inTotal' | t: { total: totalCount } }}</span>}
             <span>.</span>
-            @if (nextUrl) {<span>&nbsp;Use NEXT or FETCH ALL PAGES for more.</span>}
-            @if (stoppedAtMaxRecords) {<span>&nbsp;Stopped at the maximum of {{maxRecords | number}} records.</span>}
+            @if (nextUrl) {<span>&nbsp;{{'status.useNext' | t}}</span>}
+            @if (stoppedAtMaxRecords) {<span>&nbsp;{{'status.stoppedAtMax' | t: { max: maxRecords } }}</span>}
           </div>
           }
 
@@ -422,10 +434,10 @@
                  role="alert">
               <mat-icon class="app-problem-icon">error_outline</mat-icon>
               <div>
-                <div class="app-problem-title">{{problem.title}}</div>
-                <div>{{problem.hint}}</div>
+                <div class="app-problem-title">{{problemText('title')}}</div>
+                <div>{{problemText('hint')}}</div>
                 @if (problem.details) {
-                <div class="app-problem-details">Message from the service: {{problem.details}}</div>
+                <div class="app-problem-details">{{'error.serviceMessage' | t}} {{problem.details}}</div>
                 }
                 @if (problem.requestId) {
                 <div class="app-problem-details">RequestId: {{problem.requestId}}</div>
@@ -445,9 +457,9 @@
             <div class="row gy-2 align-items-center app-result-toolbar">
               <div class="col-auto">
                 <mat-button-toggle-group [(value)]="viewMode"
-                                         aria-label="Result view">
-                  <mat-button-toggle value="table">Table</mat-button-toggle>
-                  <mat-button-toggle value="json">JSON</mat-button-toggle>
+                                         [attr.aria-label]="'result.view' | t">
+                  <mat-button-toggle value="table">{{'result.table' | t}}</mat-button-toggle>
+                  <mat-button-toggle value="json">{{'result.json' | t}}</mat-button-toggle>
                 </mat-button-toggle-group>
               </div>
               @if (viewMode === 'table') {
@@ -455,7 +467,7 @@
                 <mat-form-field appearance="fill"
                                 class="app-form-field-full-width"
                                 subscriptSizing="dynamic">
-                  <mat-label>Columns</mat-label>
+                  <mat-label>{{'result.columns' | t}}</mat-label>
                   <mat-select multiple
                               [(value)]="visibleColumns">
                     @for (column of tableColumns; track column) {
@@ -468,7 +480,7 @@
                 <mat-form-field appearance="fill"
                                 class="app-form-field-full-width"
                                 subscriptSizing="dynamic">
-                  <mat-label>Search in result</mat-label>
+                  <mat-label>{{'result.search' | t}}</mat-label>
                   <input matInput
                          [(ngModel)]="tableSearch"
                          (ngModelChange)="onTableSearchChange()">
@@ -495,7 +507,7 @@
             </div>
             <mat-paginator [pageSizeOptions]="tablePageSizeOptions"
                            showFirstLastButtons
-                           aria-label="Result pages">
+                           [attr.aria-label]="'result.pages' | t">
             </mat-paginator>
             @if (result.error) {
             <ngx-json-viewer [json]="result.error">
@@ -504,10 +516,10 @@
             }
             @else if (hideLargeJson) {
             <div class="app-result-status">
-              The result is too large to show as JSON quickly. Use DOWNLOAD CSV, or
+              {{'status.tooLargeForJson' | t}}
               <button mat-button
                       (click)="showLargeJson = true">
-                SHOW JSON ANYWAY
+                {{'status.showJsonAnyway' | t}}
               </button>
             </div>
             @if (result.error) {
