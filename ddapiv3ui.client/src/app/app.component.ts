@@ -95,6 +95,7 @@ export class AppComponent implements OnInit, OnDestroy {
   // Simple search (observations)
   simpleFilter: string = '';
   simplePreset: (SearchPreset & { id: number }) | null = null;
+  advancedOpen: boolean = false;
   readonly simpleSearchPageSize: number = 100;
   csvFormat: CsvFormat = 'excel-nl';
   fetchingAll: boolean = false;

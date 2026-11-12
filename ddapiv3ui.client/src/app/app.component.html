@@ -102,7 +102,9 @@
 
     <div class="col-12 gy-3">
       <mat-expansion-panel class="app-advanced"
-                           [expanded]="!showSimpleSearch && !showCodeLists">
+                           [expanded]="!showSimpleSearch && !showCodeLists"
+                           (opened)="advancedOpen = true"
+                           (closed)="advancedOpen = false">
         <mat-expansion-panel-header>
           <mat-panel-title>{{'advanced.title' | t}}</mat-panel-title>
           <mat-panel-description>{{'advanced.description' | t}}</mat-panel-description>
@@ -373,6 +375,7 @@
       </mat-expansion-panel>
     </div>
 
+    @if (!showCodeLists || advancedOpen) {
     <div class="col-12">
       <div class="app-result">
         <div class="row gy-3">
@@ -586,5 +589,6 @@
       </div>
 
     </div>
+    }
   </div>
 </div>

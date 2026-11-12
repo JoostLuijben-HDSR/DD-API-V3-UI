@@ -103,6 +103,9 @@
         }
         @else {
         <span>{{'codes.shown' | t: { shown: shownRows.length, total: totalRows } }}</span>
+        @if (mergedVersions > 0) {
+        <span>&nbsp;{{'codes.versions' | t: { count: mergedVersions } }}</span>
+        }
         @if (truncated) {
         <span>&nbsp;{{'codes.truncated' | t: { count: totalRows } }}</span>
         }

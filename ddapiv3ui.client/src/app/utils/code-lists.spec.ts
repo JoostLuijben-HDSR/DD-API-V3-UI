@@ -1,5 +1,5 @@
 import {
-  CODE_LIST_GROUPS, CODE_LISTS, filterCodeLists, groupName, listName, networkLocations, referenceToRow, searchRows
+  CODE_LIST_GROUPS, CODE_LISTS, filterCodeLists, groupName, latestVersions, listName, networkLocations, referenceToRow, searchRows
 } from './code-lists';
 
 describe('code list catalogue', () => {
@@ -68,5 +68,17 @@ describe('searchRows', () => {
 
   it('returns all rows without a search', () => {
     expect(searchRows(rows, ['Code'], ' ').length).toBe(2);
+  });
+});
+
+describe('latestVersions', () => {
+  it('keeps only the newest version per code and organisation, in the original order', () => {
+    const records = [
+      { Code: 'PT.BD', Organisation: 'AquaDesk', ModifiedOn: '2021-05-20T10:52:56Z', Id: 'old' },
+      { Code: 'ME.AB', Organisation: 'AquaDesk', ModifiedOn: '2021-01-01T00:00:00Z', Id: 'me' },
+      { Code: 'PT.BD', Organisation: 'AquaDesk', ModifiedOn: '2025-01-27T14:20:25Z', Id: 'new' },
+      { Code: 'PT.BD', Organisation: 'Other', ModifiedOn: '2020-01-01T00:00:00Z', Id: 'other' }
+    ];
+    expect(latestVersions(records).map(r => (r as { Id: string }).Id)).toEqual(['new', 'me', 'other']);
   });
 });
