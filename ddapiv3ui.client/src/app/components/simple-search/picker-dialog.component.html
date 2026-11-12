@@ -1,0 +1,145 @@
+<h2 mat-dialog-title>{{data.title}}</h2>
+
+<mat-dialog-content class="app-dialog-content">
+  <div class="app-dialog-columns">
+    <div class="app-dialog-list">
+      <mat-form-field appearance="outline"
+                      class="app-dialog-search"
+                      subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
+        <mat-label>{{'dialog.search' | t}}</mat-label>
+        <input matInput
+               cdkFocusInitial
+               autocomplete="off"
+               [formControl]="searchControl">
+        @if (data.hint) {
+        <mat-hint>{{data.hint}}</mat-hint>
+        }
+      </mat-form-field>
+
+      <div class="app-dialog-toolbar">
+        <span class="app-dialog-count"
+              aria-live="polite">
+          @if (isLoading) {
+          {{'simple.loading' | t}}
+          }
+          @else if (searching) {
+          {{'simple.searching' | t}}
+          }
+          @else if (!needsMoreText) {
+          {{'dialog.matches' | t: { count: matchCount } }}
+          }
+        </span>
+        <span class="app-dialog-spacer"></span>
+        @if (hiddenUnavailable > 0 || showUnavailable) {
+        <button mat-button
+                type="button"
+                (click)="toggleUnavailable()">
+          <mat-icon>{{showUnavailable ? 'visibility_off' : 'visibility'}}</mat-icon>
+          {{showUnavailable ? ('list.hideUnavailable' | t) : ('list.showUnavailable' | t: { count: hiddenUnavailable })}}
+        </button>
+        }
+        @if (data.multiple && usableCount > 0) {
+        <button mat-stroked-button
+                type="button"
+                (click)="selectAllMatches()">
+          <mat-icon>done_all</mat-icon>
+          {{'dialog.selectAll' | t: { count: usableCount } }}
+        </button>
+        }
+      </div>
+
+      @if (needsMoreText) {
+      <p class="app-dialog-empty">{{data.hint}}</p>
+      }
+      @else if (!isLoading && !searching && items.length === 0) {
+      <p class="app-dialog-empty">{{'simple.noMatches' | t}}</p>
+      }
+      <cdk-virtual-scroll-viewport itemSize="44"
+                                   class="app-dialog-viewport">
+        <div *cdkVirtualFor="let item of items; trackBy: trackItem"
+             class="app-dialog-row">
+          @if (item.header) {
+          <div class="app-dialog-group">{{item.header}}</div>
+          }
+          @if (!item.header) {
+          @if (data.multiple) {
+          <mat-checkbox [checked]="isChosen(item.option)"
+                        [disabled]="availabilityOf(item.option) === 'no'"
+                        (change)="toggle(item.option, $event.checked)">
+            @for (part of item.parts; track $index) {@if (part.match) {<strong>{{part.text}}</strong>} @else {<span>{{part.text}}</span>}}
+            @if (item.option.detail) {
+            <span class="app-dialog-detail">{{item.option.detail}}</span>
+            }
+            @if (availabilityOf(item.option) === 'no') {
+            <span class="app-dialog-detail">{{'list.noData' | t}}</span>
+            }
+          </mat-checkbox>
+          }
+          @else {
+          <button mat-button
+                  type="button"
+                  class="app-dialog-single"
+                  [class.app-dialog-single-chosen]="isChosen(item.option)"
+                  [disabled]="availabilityOf(item.option) === 'no'"
+                  (click)="toggle(item.option, true)">
+            @for (part of item.parts; track $index) {@if (part.match) {<strong>{{part.text}}</strong>} @else {<span>{{part.text}}</span>}}
+            @if (availabilityOf(item.option) === 'no') {
+            <span class="app-dialog-detail">{{'list.noData' | t}}</span>
+            }
+          </button>
+          }
+          }
+        </div>
+      </cdk-virtual-scroll-viewport>
+    </div>
+
+    @if (data.multiple) {
+    <aside class="app-dialog-chosen"
+           [attr.aria-label]="'dialog.selected' | t: { count: chosen.length }">
+      <div class="app-dialog-chosen-header">
+        <h3>{{'dialog.selected' | t: { count: chosen.length } }}</h3>
+        @if (chosen.length > 0) {
+        <button mat-button
+                type="button"
+                (click)="clearChosen()">
+          {{'dialog.clear' | t}}
+        </button>
+        }
+      </div>
+      @if (chosen.length === 0) {
+      <p class="app-dialog-empty">{{'dialog.noneSelected' | t}}</p>
+      }
+      <ul class="app-dialog-chosen-list">
+        @for (option of chosen; track option.value) {
+        <li>
+          <span>{{option.label}}</span>
+          <button mat-icon-button
+                  type="button"
+                  [attr.aria-label]="('simple.remove' | t) + ' ' + option.label"
+                  (click)="remove(option)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </li>
+        }
+      </ul>
+    </aside>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button
+          type="button"
+          mat-dialog-close>
+    {{'dialog.cancel' | t}}
+  </button>
+  @if (data.multiple) {
+  <button mat-raised-button
+          type="button"
+          color="primary"
+          (click)="apply()">
+    {{'dialog.apply' | t: { count: chosen.length } }}
+  </button>
+  }
+</mat-dialog-actions>

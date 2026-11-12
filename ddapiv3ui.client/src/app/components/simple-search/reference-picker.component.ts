@@ -1,7 +1,8 @@
 import { Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
-import { Observable, of, Subject } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { I18nService } from '../../i18n/i18n.service';
 import {
@@ -9,6 +10,7 @@ import {
   rememberRecent, TextPart, withRecentFirst
 } from '../../utils/list-search';
 import { PickerOption } from '../../utils/simple-search';
+import { PickerDialogComponent, PickerDialogData } from './picker-dialog.component';
 
 export interface AvailabilityProgressInfo {
   done: number;
@@ -67,6 +69,8 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
   /** Hide options without data (with a way to show them), instead of greying them out. */
   @Input() hideUnavailable: boolean = false;
   @Input() disabled: boolean = false;
+  /** Number of chips shown before the rest is summarised as "+N more". */
+  @Input() maxChips: number = 4;
   @Input() loadFailed: boolean = false;
   @Input() selected: PickerOption[] = [];
   @Output() selectedChange = new EventEmitter<PickerOption[]>();
@@ -100,7 +104,10 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
   private panelOpen: boolean = false;
   private destroy$ = new Subject<void>();
 
-  constructor(public i18n: I18nService) { }
+  private options$ = new BehaviorSubject<PickerOption[] | null>(null);
+  private availability$ = new BehaviorSubject<Record<string, Availability> | null>(null);
+
+  constructor(public i18n: I18nService, private dialog: MatDialog) { }
 
   readonly displayFn = (value: unknown): string => isAction(value) ? this.text : '';
 
@@ -142,6 +149,12 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
         this.textControl.enable({ emitEvent: false });
       }
     }
+    if (changes['options']) {
+      this.options$.next(this.options);
+    }
+    if (changes['availability']) {
+      this.availability$.next(this.availability);
+    }
     if (changes['options'] || changes['selected'] || changes['availability']) {
       this.rebuild();
     }
@@ -150,6 +163,53 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  get visibleChips(): PickerOption[] {
+    return this.selected.length > this.maxChips ? this.selected.slice(0, this.maxChips - 1) : this.selected;
+  }
+
+  get hiddenChipCount(): number {
+    return this.selected.length - this.visibleChips.length;
+  }
+
+  /** Opens the large window for choosing from the list. */
+  openDialog(): void {
+    if (this.disabled) {
+      return;
+    }
+    this.trigger?.closePanel();
+    this.opened.emit();
+    const data: PickerDialogData = {
+      title: this.label,
+      hint: this.hint,
+      multiple: this.multiple,
+      grouped: this.grouped,
+      hideUnavailable: this.hideUnavailable,
+      options$: this.options$,
+      search: this.search,
+      minSearchLength: this.minSearchLength,
+      selected: this.selected,
+      availability$: this.availability$,
+      requestCheck: options => this.shownOptions.emit(options)
+    };
+    this.dialog.open<PickerDialogComponent, PickerDialogData, PickerOption[]>(PickerDialogComponent, {
+      data,
+      width: '80vw',
+      maxWidth: '1200px',
+      autoFocus: 'first-tabbable'
+    }).afterClosed().subscribe(result => {
+      if (!result) {
+        return;
+      }
+      const before = new Set(this.selected.map(s => s.value));
+      const added = result.filter(o => !before.has(o.value)).map(o => o.value);
+      if (added.length > 0) {
+        this.recent = rememberRecent(this.recent, added.slice(0, 5));
+        this.writeRecent();
+      }
+      this.selectedChange.emit(result);
+    });
   }
 
   get isLoading(): boolean {
