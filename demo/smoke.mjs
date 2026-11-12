@@ -17,7 +17,7 @@ const check = (name, ok, detail = '') => {
 const pageErrors = [];
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1600, height: 1000 }, acceptDownloads: true });
+const page = await browser.newPage({ viewport: { width: 1600, height: 1100 }, acceptDownloads: true });
 page.on('pageerror', e => pageErrors.push(String(e)));
 page.on('console', m => { if (m.type() === 'error') pageErrors.push(m.text()); });
 
@@ -25,33 +25,85 @@ async function shot(name) {
   await page.screenshot({ path: join(out, name), fullPage: true });
 }
 
-async function chooseInSelect(label, option) {
-  await page.locator('mat-form-field', { hasText: label }).first().locator('mat-select').click();
-  await page.getByRole('option', { name: option, exact: true }).click();
+const panelOptions = () => page.locator('.mat-mdc-autocomplete-panel mat-option, .mat-mdc-select-panel mat-option');
+const picker = label => page.locator('app-reference-picker', { hasText: label }).first();
+const urlText = async () => page.locator('textarea').first().inputValue();
+
+async function waitForOptionCount(min, timeout = 20000) {
+  const end = Date.now() + timeout;
+  while (Date.now() < end) {
+    const count = await panelOptions().count();
+    if (count >= min) {
+      return count;
+    }
+    await page.waitForTimeout(250);
+  }
+  return panelOptions().count();
 }
 
 try {
   await page.goto(base, { waitUntil: 'networkidle' });
-  await page.waitForSelector('mat-expansion-panel', { timeout: 60000 });
-  await page.waitForTimeout(2000);
-  await shot('1-start.png');
-  check('page loads', await page.locator('mat-expansion-panel').count() > 0);
+  await page.waitForSelector('app-simple-search', { timeout: 60000 });
+  await page.waitForTimeout(1500);
 
-  // Filters: ADD FILTER and the period helper (observations end point)
+  // ---------------- Dutch (default) and the simple search ----------------
+  check('Dutch is the default language', await page.getByRole('heading', { name: 'Eenvoudig zoeken' }).count() === 1);
+
+  await page.locator('app-simple-search mat-form-field', { hasText: 'Waterbeheerder' }).locator('mat-select').click();
+  const organisations = await waitForOptionCount(10);
+  check('water authorities are listed when the field is opened', organisations >= 10, `${organisations} options`);
+  await page.getByRole('option', { name: /Stichtse Rijnlanden/ }).click();
+
+  await picker('Meetpakket').locator('input').click();
+  const packages = await waitForOptionCount(10);
+  check('measurement packages are shown on focus, without typing', packages >= 10, `${packages} options`);
+  await picker('Meetpakket').locator('input').fill('planten bed');
+  await page.getByRole('option', { name: /Planten bedekking \(PT\.BD\)/ }).click();
+  check('a chosen package is shown as a chip', await picker('Meetpakket').locator('mat-chip-row', { hasText: 'Planten bedekking' }).count() === 1);
+  await page.waitForTimeout(500);
+  const url = await urlText();
+  check('simple search builds the filter', url.includes("Parameter/Organisation eq 'HSR'") && url.includes("Parameter/MeasurementPackage eq 'PT.BD'"), url);
+
+  await picker('Meetlocatie').locator('input').click();
+  await picker('Meetlocatie').locator('input').fill('langbroek');
+  const locations = await waitForOptionCount(1);
+  const locationTexts = await panelOptions().allInnerTexts();
+  check('locations of the water authority can be found by name', locationTexts.some(t => /Langbroekerwetering/i.test(t)), `${locations} options, e.g. ${locationTexts[0] ?? ''}`);
+  await page.keyboard.press('Escape');
+
+  await picker('Taxon of parameter').locator('input').click();
+  await picker('Taxon of parameter').locator('input').fill('galium pal');
+  await waitForOptionCount(1);
+  const taxa = await panelOptions().allInnerTexts();
+  check('taxa are found by searching the server', taxa.some(t => /Galium palustre/.test(t)), taxa.slice(0, 3).join(' | '));
+  await page.keyboard.press('Escape');
+
+  await page.waitForTimeout(2500);
+  const count = (await page.locator('.app-simple-count').innerText()).trim();
+  check('the number of observations is shown (or why not)', /metingen gevonden|kon niet worden bepaald|tellen/.test(count), count);
+  await shot('1-simple-search-nl.png');
+
+  // ---------------- English and the advanced options ----------------
+  await page.locator('mat-button-toggle', { hasText: 'EN' }).click();
+  await page.waitForTimeout(500);
+  check('the language can be switched to English', await page.getByRole('heading', { name: 'Simple search' }).count() === 1);
+  await page.getByRole('button', { name: 'CLEAR ALL' }).click();
+
+  await page.locator('mat-expansion-panel-header', { hasText: 'Advanced' }).click();
+  await page.waitForTimeout(500);
   const filterRows = async () => page.locator('button[aria-label="Remove this filter"]').count();
   const before = await filterRows();
   await page.getByRole('button', { name: /ADD FILTER/ }).click();
   check('ADD FILTER adds a row', (await filterRows()) === before + 1, `${before} -> ${await filterRows()}`);
-  check('period helper is shown for observations', await page.getByRole('button', { name: 'ADD PERIOD' }).count() === 1);
-  await page.locator('input[type="date"]').nth(0).fill('2025-01-01');
-  await page.locator('input[type="date"]').nth(1).fill('2025-12-31');
+  const advancedDates = page.locator('mat-expansion-panel.app-advanced input[type="date"]');
+  await advancedDates.nth(0).fill('2025-01-01');
+  await advancedDates.nth(1).fill('2025-12-31');
   await page.getByRole('button', { name: 'ADD PERIOD' }).click();
-  const url = await page.locator('textarea').first().inputValue();
+  const advancedUrl = await urlText();
   check('period adds ge/lt filters with seconds',
-    url.includes('PhenomenonTime/BeginPosition ge 2025-01-01T00:00:00Z') && url.includes('PhenomenonTime/BeginPosition lt 2026-01-01T00:00:00Z'), url);
-  await shot('2-filters.png');
+    advancedUrl.includes('PhenomenonTime/BeginPosition ge 2025-01-01T00:00:00Z') && advancedUrl.includes('PhenomenonTime/BeginPosition lt 2026-01-01T00:00:00Z'), advancedUrl);
+  await shot('2-advanced-en.png');
 
-  // Error panel: observations without a valid key and without the required filter
   await page.getByRole('button', { name: 'GET', exact: true }).click();
   await page.waitForSelector('.app-problem', { timeout: 60000 });
   const problem = (await page.locator('.app-problem').innerText()).replace(/\s+/g, ' ');
@@ -59,8 +111,10 @@ try {
   await shot('3-error.png');
 
   // References: table view
-  await chooseInSelect('Endpoint', 'References');
+  await page.locator('mat-form-field', { hasText: 'Endpoint' }).first().locator('mat-select').click();
+  await page.getByRole('option', { name: 'References', exact: true }).click();
   await page.waitForTimeout(3000);
+  check('simple search is hidden for references', await page.locator('app-simple-search').count() === 0);
   await page.getByRole('button', { name: 'GET', exact: true }).click();
   await page.waitForSelector('table.app-result-table tbody tr', { timeout: 60000 });
   const rows = await page.locator('table.app-result-table tbody tr').count();
@@ -68,7 +122,6 @@ try {
   check('result is shown as a table', rows > 0, `${rows} rows, columns: ${headers.join(', ')}`);
   await shot('4-table.png');
 
-  // CSV download
   const [download] = await Promise.all([
     page.waitForEvent('download', { timeout: 30000 }),
     page.getByRole('button', { name: 'DOWNLOAD CSV' }).click()
@@ -76,14 +129,11 @@ try {
   const csvPath = join(out, download.suggestedFilename());
   await download.saveAs(csvPath);
   const csv = readFileSync(csvPath, 'utf8');
-  const firstLine = csv.replace(/^\uFEFF/, '').split('\r\n')[0];
-  check('CSV download has BOM and semicolon header', csv.startsWith('\uFEFF') && firstLine.includes(';') && firstLine.includes('Code'),
+  const firstLine = csv.replace(/^﻿/, '').split('\r\n')[0];
+  check('CSV download has BOM and semicolon header', csv.startsWith('﻿') && firstLine.includes(';') && firstLine.includes('Code'),
     `${download.suggestedFilename()}: ${firstLine.slice(0, 120)}`);
 
-  // JSON view toggle
-  await page.getByRole('radio', { name: 'JSON' }).click().catch(async () => {
-    await page.locator('mat-button-toggle', { hasText: 'JSON' }).click();
-  });
+  await page.locator('mat-button-toggle', { hasText: 'JSON' }).click();
   await page.waitForTimeout(500);
   check('JSON view can be shown', await page.locator('ngx-json-viewer').count() > 0);
   await shot('5-json.png');
