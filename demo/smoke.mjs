@@ -129,8 +129,8 @@ try {
   const csvPath = join(out, download.suggestedFilename());
   await download.saveAs(csvPath);
   const csv = readFileSync(csvPath, 'utf8');
-  const firstLine = csv.replace(/^﻿/, '').split('\r\n')[0];
-  check('CSV download has BOM and semicolon header', csv.startsWith('﻿') && firstLine.includes(';') && firstLine.includes('Code'),
+  const firstLine = csv.replace(/^\uFEFF/, '').split('\r\n')[0];
+  check('CSV download has BOM and semicolon header', csv.startsWith('\uFEFF') && firstLine.includes(';') && firstLine.includes('Code'),
     `${download.suggestedFilename()}: ${firstLine.slice(0, 120)}`);
 
   await page.locator('mat-button-toggle', { hasText: 'JSON' }).click();
