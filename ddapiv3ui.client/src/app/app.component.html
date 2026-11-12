@@ -83,6 +83,7 @@
       <app-simple-search [baseUrl]="baseUrl"
                          [apiKey]="apiKey"
                          [busy]="loadingResult"
+                         [preset]="simplePreset"
                          (filterChange)="onSimpleFilterChange($event)"
                          (show)="showSimpleResults()"
                          (fetchAll)="fetchAllSimpleResults()">
@@ -90,9 +91,18 @@
     </div>
     }
 
+    @if (showCodeLists) {
+    <div class="col-12 gy-3">
+      <app-code-list-browser [baseUrl]="baseUrl"
+                             [apiKey]="apiKey"
+                             (useInSearch)="useInSimpleSearch($event)">
+      </app-code-list-browser>
+    </div>
+    }
+
     <div class="col-12 gy-3">
       <mat-expansion-panel class="app-advanced"
-                           [expanded]="!showSimpleSearch">
+                           [expanded]="!showSimpleSearch && !showCodeLists">
         <mat-expansion-panel-header>
           <mat-panel-title>{{'advanced.title' | t}}</mat-panel-title>
           <mat-panel-description>{{'advanced.description' | t}}</mat-panel-description>

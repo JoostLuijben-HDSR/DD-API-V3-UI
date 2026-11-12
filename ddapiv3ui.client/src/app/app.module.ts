@@ -24,6 +24,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { PickerDialogComponent } from './components/simple-search/picker-dialog.component';
+import { CodeListBrowserComponent } from './components/code-lists/code-list-browser.component';
 import { ReferencePickerComponent } from './components/simple-search/reference-picker.component';
 import { SimpleSearchComponent } from './components/simple-search/simple-search.component';
 import { TranslatedPaginatorIntl } from './i18n/translated-paginator-intl';
@@ -36,7 +37,8 @@ import { MatExpansionModule } from '@angular/material/expansion';
     TranslatePipe,
     ReferencePickerComponent,
     SimpleSearchComponent,
-    PickerDialogComponent
+    PickerDialogComponent,
+    CodeListBrowserComponent
   ],
   imports: [
     BrowserModule,

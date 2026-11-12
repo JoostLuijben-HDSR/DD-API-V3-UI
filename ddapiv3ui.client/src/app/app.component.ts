@@ -22,6 +22,7 @@ import { toDateTimeOffsetLiteral } from './utils/odata-value';
 import { ErrorExplanation, explainResponse } from './utils/error-hints';
 import { I18nService } from './i18n/i18n.service';
 import { Lang, LANGS } from './utils/i18n';
+import { SearchPreset } from './utils/code-lists';
 import { CsvFormat, csvFileName, toCsv } from './utils/csv';
 import { readCount, readNextLink, readRecords, withCount, withMinimumTop } from './utils/odata-url';
 
@@ -93,6 +94,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // Simple search (observations)
   simpleFilter: string = '';
+  simplePreset: (SearchPreset & { id: number }) | null = null;
   readonly simpleSearchPageSize: number = 100;
   csvFormat: CsvFormat = 'excel-nl';
   fetchingAll: boolean = false;
@@ -724,6 +726,21 @@ export class AppComponent implements OnInit, OnDestroy {
 
   get showSimpleSearch(): boolean {
     return this.endPoint?.url === 'observations';
+  }
+
+  get showCodeLists(): boolean {
+    return this.endPoint?.url === 'references';
+  }
+
+  /** Switches to the simple search for observations, with codes chosen in the code lists. */
+  useInSimpleSearch(preset: SearchPreset): void {
+    this.simplePreset = { ...preset, id: Date.now() };
+    const observations = this.appSettings.endPoints.find(e => e.url === 'observations');
+    if (observations && this.endPoint !== observations) {
+      this.endPoint = observations;
+      this.onEndPointChange(null);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   onSimpleFilterChange(filter: string): void {

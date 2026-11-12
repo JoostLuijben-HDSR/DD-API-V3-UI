@@ -1,0 +1,189 @@
+<section class="app-codes"
+         [attr.aria-label]="'codes.title' | t">
+  <h2 class="app-codes-title">{{'codes.title' | t}}</h2>
+  <p class="app-codes-intro">{{'codes.intro' | t}}</p>
+
+  <div class="row">
+    <nav class="col-md-3 app-codes-nav"
+         [attr.aria-label]="'codes.lists' | t">
+      <mat-form-field appearance="outline"
+                      class="app-form-field-full-width"
+                      subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
+        <mat-label>{{'codes.searchLists' | t}}</mat-label>
+        <input matInput
+               autocomplete="off"
+               [value]="listSearch"
+               (input)="onListSearch($any($event.target).value)">
+      </mat-form-field>
+
+      @for (group of groups; track group.id) {
+      @if (listsIn(group.id).length > 0) {
+      <h3 class="app-codes-group">{{groupLabel(group.id)}}</h3>
+      <ul class="app-codes-lists">
+        @for (list of listsIn(group.id); track list.type) {
+        <li>
+          <button type="button"
+                  class="app-codes-list"
+                  [class.app-codes-list-active]="selected?.type === list.type"
+                  [attr.aria-current]="selected?.type === list.type ? 'true' : null"
+                  (click)="select(list)">
+            <span>{{name(list)}}</span>
+            @if (counts[list.type] != null) {
+            <span class="app-codes-count">{{'codes.count' | t: { count: counts[list.type] } }}</span>
+            }
+          </button>
+        </li>
+        }
+      </ul>
+      }
+      }
+    </nav>
+
+    <div class="col-md-9">
+      @if (!selected) {
+      <div class="app-codes-empty">
+        <mat-icon>arrow_back</mat-icon>
+        <p>{{'codes.choose' | t}}</p>
+      </div>
+      }
+      @else {
+      <h3 class="app-codes-heading">{{name(selected)}}</h3>
+      <p class="app-codes-description">{{description(selected)}}</p>
+
+      <div class="row gy-2 align-items-center">
+        @if (selected.byOrganisation) {
+        <div class="col-md-4">
+          <app-reference-picker [label]="'codes.organisation' | t"
+                                [placeholder]="'simple.placeholder' | t"
+                                [multiple]="false"
+                                [required]="true"
+                                [options]="organisations"
+                                [selected]="organisationSelection"
+                                (selectedChange)="onOrganisation($event)">
+          </app-reference-picker>
+        </div>
+        }
+        <div class="col">
+          <mat-form-field appearance="outline"
+                          class="app-form-field-full-width"
+                          subscriptSizing="dynamic">
+            <mat-icon matPrefix>search</mat-icon>
+            <mat-label>{{(selected.serverSearch ? 'codes.searchServer' : 'codes.search') | t}}</mat-label>
+            <input matInput
+                   autocomplete="off"
+                   [value]="rowSearch"
+                   (input)="onRowSearch($any($event.target).value)">
+          </mat-form-field>
+        </div>
+        <div class="col-auto">
+          <button mat-stroked-button
+                  type="button"
+                  [disabled]="shownRows.length === 0"
+                  (click)="downloadCsv()">
+            <mat-icon>download</mat-icon>
+            {{'codes.download' | t}}
+          </button>
+        </div>
+      </div>
+
+      <div class="app-codes-status"
+           aria-live="polite">
+        @if (needsOrganisation) {
+        <span>{{'codes.needsOrganisation' | t}}</span>
+        }
+        @else if (needsSearchText) {
+        <span>{{'codes.needsSearch' | t}}</span>
+        }
+        @else if (loading) {
+        <span>{{'simple.loading' | t}}</span>
+        }
+        @else if (failed) {
+        <span class="app-codes-error">{{'simple.loadFailed' | t}}</span>
+        }
+        @else {
+        <span>{{'codes.shown' | t: { shown: shownRows.length, total: totalRows } }}</span>
+        @if (truncated) {
+        <span>&nbsp;{{'codes.truncated' | t: { count: totalRows } }}</span>
+        }
+        @if (canUseAll) {
+        <button mat-button
+                type="button"
+                color="primary"
+                (click)="useAllShown()">
+          <mat-icon>manage_search</mat-icon>
+          {{'codes.useAll' | t: { count: shownRows.length } }}
+        </button>
+        }
+        }
+      </div>
+
+      <div class="row">
+        <div [class]="detail ? 'col-lg-8' : 'col-12'">
+          @if (shownRows.length > 0) {
+          <div class="app-codes-table-container">
+            <table mat-table
+                   [dataSource]="dataSource"
+                   matSort
+                   class="app-codes-table">
+              @for (column of columns; track column) {
+              <ng-container [matColumnDef]="column">
+                <th mat-header-cell
+                    *matHeaderCellDef
+                    mat-sort-header
+                    [title]="column">{{columnLabel(column)}}</th>
+                <td mat-cell
+                    *matCellDef="let row">{{row[column]}}</td>
+              </ng-container>
+              }
+              <tr mat-header-row *matHeaderRowDef="columns; sticky: true"></tr>
+              <tr mat-row
+                  *matRowDef="let row; columns: columns"
+                  class="app-codes-row"
+                  [class.app-codes-row-active]="detail?.row === row"
+                  tabindex="0"
+                  (click)="openDetail(row)"
+                  (keydown.enter)="openDetail(row)"></tr>
+            </table>
+          </div>
+          <mat-paginator [pageSizeOptions]="[25, 100, 500]"
+                         showFirstLastButtons
+                         [attr.aria-label]="'result.pages' | t">
+          </mat-paginator>
+          }
+        </div>
+
+        @if (detail) {
+        <aside class="col-lg-4 app-codes-detail"
+               [attr.aria-label]="'codes.details' | t">
+          <div class="app-codes-detail-header">
+            <h4>{{'codes.details' | t}}</h4>
+            <button mat-icon-button
+                    type="button"
+                    [attr.aria-label]="'codes.closeDetails' | t"
+                    (click)="closeDetail()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <dl>
+            @for (field of detail.fields; track field.name) {
+            <dt [title]="field.name">{{field.label}}</dt>
+            <dd>{{field.value}}</dd>
+            }
+          </dl>
+          @if (selected.useInSearch) {
+          <button mat-raised-button
+                  type="button"
+                  color="primary"
+                  (click)="useOne()">
+            <mat-icon>manage_search</mat-icon>
+            {{useOneLabel()}}
+          </button>
+          }
+        </aside>
+        }
+      </div>
+      }
+    </div>
+  </div>
+</section>
