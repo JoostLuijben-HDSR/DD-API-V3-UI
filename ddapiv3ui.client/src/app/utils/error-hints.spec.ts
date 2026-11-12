@@ -80,8 +80,14 @@ describe('explainResponse', () => {
     expect(explanation?.details).toBe('Something else');
   });
 
+  it('explains any error without an API key as a missing key', () => {
+    expect(explainResponse(odataError('Other', 'An unexpected error occurred. (RequestId: x)', 500), false)?.key).toBe('error.noKey');
+    expect(explainResponse(null, false)?.key).toBe('error.noKey');
+    expect(explainResponse({ value: [] }, false)).toBeNull();
+  });
+
   it('only uses keys that have a title and a hint in both languages', () => {
-    const keys = ['error.noResponse', 'error.unreachable', 'error.urlNotAllowed', 'error.missingFilter', 'error.requiredField',
+    const keys = ['error.noKey', 'error.noResponse', 'error.unreachable', 'error.urlNotAllowed', 'error.missingFilter', 'error.requiredField',
       'error.unknownField', 'error.unreadableFilter', 'error.range', 'error.database', 'error.noAccess', 'error.general'];
     const missing = keys.flatMap(key => ['title', 'hint'].flatMap(part =>
       (['nl', 'en'] as const).filter(lang => !MESSAGES[lang][`${key}.${part}`]).map(lang => `${lang}:${key}.${part}`)));

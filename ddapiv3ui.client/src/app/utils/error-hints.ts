@@ -57,13 +57,24 @@ function readError(response: unknown): { code: string, message: string, status: 
   return { code, message, status };
 }
 
+function isError(response: unknown): boolean {
+  return response === null || response === undefined || response === '' || readError(response) !== null;
+}
+
 /**
- * Explains a response after a request. Returns null when the response is a normal result.
+ * Explains a response after a request. Without an API key, any error is explained as a
+ * missing key, because that is almost always the cause. Returns null when the response is a normal result.
  * An empty response (null, undefined or '') is explained as a likely key problem, because
  * the query builder's server passes an empty body when the service answers 401.
  */
-export function explainResponse(response: unknown): ErrorExplanation | null {
+export function explainResponse(response: unknown, hasApiKey: boolean = true): ErrorExplanation | null {
   const none = { field: null, range: null, details: null, requestId: null };
+  if (!hasApiKey && isError(response)) {
+    // Without a key, services answer with anything from an empty body to a server error.
+    const error = readError(response);
+    const message = error?.message ?? '';
+    return { ...none, key: 'error.noKey', details: message ? stripRequestId(message) : null, requestId: extractRequestId(message) };
+  }
   if (response === null || response === undefined || response === '') {
     return { ...none, key: 'error.noResponse' };
   }
