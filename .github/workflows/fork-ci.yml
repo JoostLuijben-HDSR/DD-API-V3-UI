@@ -33,6 +33,8 @@ jobs:
           - feature/result-table
           - feature/filter-usability
           - feature/friendly-errors
+          - feature/i18n
+          - feature/simple-search
           - demo
     defaults:
       run:
