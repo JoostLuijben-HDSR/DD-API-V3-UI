@@ -49,15 +49,22 @@ try {
   // ---------------- Dutch (default) and the simple search ----------------
   check('Dutch is the default language', await page.getByRole('heading', { name: 'Eenvoudig zoeken' }).count() === 1);
 
-  await page.locator('app-simple-search mat-form-field', { hasText: 'Waterbeheerder' }).locator('mat-select').click();
+  await picker('Waterbeheerder').locator('input').click();
   const organisations = await waitForOptionCount(10);
   check('water authorities are listed when the field is opened', organisations >= 10, `${organisations} options`);
+  await picker('Waterbeheerder').locator('input').fill('stichtse');
   await page.getByRole('option', { name: /Stichtse Rijnlanden/ }).click();
+  check('the water authority field is searchable', await picker('Waterbeheerder').locator('mat-chip-row', { hasText: 'Stichtse' }).count() === 1);
 
   await picker('Meetpakket').locator('input').click();
   const packages = await waitForOptionCount(10);
   check('measurement packages are shown on focus, without typing', packages >= 10, `${packages} options`);
-  await picker('Meetpakket').locator('input').fill('planten bed');
+  const groups = await page.locator('.mat-mdc-autocomplete-panel mat-optgroup').count();
+  check('measurement packages are grouped', groups >= 3, `${groups} groups`);
+  await picker('Meetpakket').locator('input').fill('bed planten');
+  await page.getByRole('option', { name: /Planten bedekking \(PT\.BD\)/ }).waitFor({ timeout: 10000 });
+  const bold = await page.locator('.mat-mdc-autocomplete-panel mat-option strong').count();
+  check('words in any order find the option, with the matches in bold', bold >= 2, `${bold} highlighted parts`);
   await page.getByRole('option', { name: /Planten bedekking \(PT\.BD\)/ }).click();
   check('a chosen package is shown as a chip', await picker('Meetpakket').locator('mat-chip-row', { hasText: 'Planten bedekking' }).count() === 1);
   await page.waitForTimeout(500);
@@ -65,11 +72,23 @@ try {
   check('simple search builds the filter', url.includes("Parameter/Organisation eq 'HSR'") && url.includes("Parameter/MeasurementPackage eq 'PT.BD'"), url);
 
   await picker('Meetlocatie').locator('input').click();
+  await picker('Meetlocatie').locator('input').fill('brug langbroek');
+  await waitForOptionCount(1);
+  const bridge = await panelOptions().allInnerTexts();
+  check('locations can be found with several words', bridge.some(t => /Langbroekerwetering laatste brug/i.test(t)), bridge.slice(0, 2).join(' | '));
   await picker('Meetlocatie').locator('input').fill('langbroek');
-  const locations = await waitForOptionCount(1);
-  const locationTexts = await panelOptions().allInnerTexts();
-  check('locations of the water authority can be found by name', locationTexts.some(t => /Langbroekerwetering/i.test(t)), `${locations} options, e.g. ${locationTexts[0] ?? ''}`);
+  const selectAll = page.getByRole('option', { name: /Alle \d+ treffers selecteren/ });
+  await selectAll.waitFor({ timeout: 10000 });
+  const selectAllText = await selectAll.innerText();
+  await selectAll.click();
+  await page.waitForTimeout(500);
+  const chips = await picker('Meetlocatie').locator('mat-chip-row').count();
+  check('all matching locations can be selected at once', chips >= 2, `${selectAllText.trim()} -> ${chips} chips`);
   await page.keyboard.press('Escape');
+  await page.waitForTimeout(500);
+  const urlWithLocations = await urlText();
+  check('the chosen locations are in the filter', urlWithLocations.includes('Foi/Code in ('), urlWithLocations.slice(0, 200));
+  await picker('Meetlocatie').locator('mat-chip-row').first().locator('button').click();
   await page.waitForTimeout(500);
 
   await picker('Taxon of parameter').locator('input').click();
