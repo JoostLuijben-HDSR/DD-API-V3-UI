@@ -35,6 +35,7 @@ jobs:
           - feature/friendly-errors
           - feature/i18n
           - feature/simple-search
+          - feature/smart-lists
           - demo
     defaults:
       run:
