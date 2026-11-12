@@ -73,7 +73,7 @@ try {
 
   await picker('Meetlocatie').locator('input').click();
   await picker('Meetlocatie').locator('input').fill('brug langbroek');
-  await waitForOptionCount(1);
+  await page.getByRole('option', { name: /laatste brug/ }).first().waitFor({ timeout: 30000 }).catch(() => {});
   const bridge = await panelOptions().allInnerTexts();
   check('locations can be found with several words', bridge.some(t => /Langbroekerwetering laatste brug/i.test(t)), bridge.slice(0, 2).join(' | '));
   await picker('Meetlocatie').locator('input').fill('langbroek');
