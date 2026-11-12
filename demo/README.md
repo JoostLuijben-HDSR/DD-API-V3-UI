@@ -24,7 +24,7 @@ Stop the codespace when you are done, so it does not use your free hours.
 
 ## Run it elsewhere
 
-Requires .NET 8 SDK and Node.js 20:
+Requires the .NET 10 SDK (the C# projects use C# 14), the ASP.NET Core 8 runtime and Node.js 20:
 
 ```bash
 bash demo/run.sh   # then open http://localhost:8080

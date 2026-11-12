@@ -7,6 +7,19 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PORT="${PORT:-8080}"
 OUT="${OUT:-/tmp/ddapi-ui}"
 
+# The C# projects use LangVersion 14 (needs the .NET 10 SDK) and target net8.0
+# (needs the ASP.NET Core 8 runtime to run).
+if ! dotnet --list-sdks | grep -q '^1[0-9]\.'; then
+  echo "The .NET 10 SDK is required to build the server (C# 14). Installed SDKs:" >&2
+  dotnet --list-sdks >&2
+  echo "In a codespace: rebuild the container (Codespaces: Rebuild Container)." >&2
+  exit 1
+fi
+if ! dotnet --list-runtimes | grep -q '^Microsoft.AspNetCore.App 8\.'; then
+  echo "The ASP.NET Core 8 runtime is required to run the server." >&2
+  exit 1
+fi
+
 cd "$ROOT/ddapiv3ui.client"
 if [ ! -d node_modules ]; then
   npm ci --no-audit --no-fund
