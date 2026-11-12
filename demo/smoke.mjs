@@ -70,10 +70,11 @@ try {
   const locationTexts = await panelOptions().allInnerTexts();
   check('locations of the water authority can be found by name', locationTexts.some(t => /Langbroekerwetering/i.test(t)), `${locations} options, e.g. ${locationTexts[0] ?? ''}`);
   await page.keyboard.press('Escape');
+  await page.waitForTimeout(500);
 
   await picker('Taxon of parameter').locator('input').click();
   await picker('Taxon of parameter').locator('input').fill('galium pal');
-  await waitForOptionCount(1);
+  await page.getByRole('option', { name: /Galium palustre/ }).first().waitFor({ timeout: 20000 }).catch(() => {});
   const taxa = await panelOptions().allInnerTexts();
   check('taxa are found by searching the server', taxa.some(t => /Galium palustre/.test(t)), taxa.slice(0, 3).join(' | '));
   await page.keyboard.press('Escape');
