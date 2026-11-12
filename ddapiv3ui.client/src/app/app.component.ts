@@ -36,7 +36,8 @@ export class AppComponent implements OnInit, OnDestroy {
   metaData!: CsdlProperty[];
 
   baseUrl: string = '';
-  apiKey: string = 'xxxxxxxx';
+  apiKey: string = '';
+  showApiKey = false;
   endPoint!: EndPoint;
   coordinateSystems: any[] = [
     {
@@ -417,8 +418,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   setBaseUrlAndApiKey(appSettings: AppSettings): Observable<string> {
     this.appSettings = appSettings;
+    appSettings.baseUrls.forEach(url => localStorage.removeItem(url)); // API keys used to be stored here
     const storedBaseUrl = localStorage.getItem('baseUrl');
-    const storedApiKey = localStorage.getItem(storedBaseUrl ?? '');
+    const storedApiKey = sessionStorage.getItem(storedBaseUrl ?? '');
     if (!storedBaseUrl) {
       this.baseUrl = appSettings.baseUrls.length > 0 ? appSettings.baseUrls[0] : '';
       localStorage.setItem('baseUrl', this.baseUrl);
@@ -427,7 +429,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     if (!storedApiKey) {
-      localStorage.setItem(this.baseUrl, this.apiKey);
+      sessionStorage.setItem(this.baseUrl, this.apiKey);
     } else {
       this.apiKey = storedApiKey;
     }
@@ -436,7 +438,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.result = { "@odata.context": this.baseUrl, "value": [], "@odata.nextLink": "" };
     this.requestHeaders = {
       headers: {
-        'X-Api-Key': this.apiKey,
+        'X-Api-Key': this.apiKey ? '********' : '',
         'Accept-Crs': this.coordinateSystem
       }
     };
@@ -470,8 +472,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   //events
   onBaseUrlChange(args: any): void {
-    this.apiKey = localStorage.getItem(this.baseUrl) ?? '';
-    this.storeBaseUrlAndApiKey();
+    this.apiKey = sessionStorage.getItem(this.baseUrl) ?? '';
+    this.showApiKey = false;
+    this.onApiKeyChange(this.apiKey);
     this.service.getMetaData(this.baseUrl, this.endPoint.property)
       .subscribe((result) => this.setMetaData(result));
   }
@@ -479,7 +482,7 @@ export class AppComponent implements OnInit, OnDestroy {
   onApiKeyChange(args: any): void {
     this.requestHeaders = {
       headers: {
-        'X-Api-Key': this.apiKey,
+        'X-Api-Key': this.apiKey ? '********' : '',
         'Accept-Crs': this.coordinateSystem
       }
     };
@@ -497,7 +500,7 @@ export class AppComponent implements OnInit, OnDestroy {
   onCoordinateSystemChange(args: any): void {
     this.requestHeaders = {
       headers: {
-        'X-Api-Key': this.apiKey,
+        'X-Api-Key': this.apiKey ? '********' : '',
         'Accept-Crs': this.coordinateSystem
       }
     };
@@ -661,7 +664,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   storeBaseUrlAndApiKey(): void {
     localStorage.setItem('baseUrl', this.baseUrl);
-    localStorage.setItem(this.baseUrl, this.apiKey);
+    sessionStorage.setItem(this.baseUrl, this.apiKey);
   }
 
   generateUrl(): void {
