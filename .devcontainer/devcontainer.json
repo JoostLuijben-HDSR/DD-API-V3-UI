@@ -1,9 +1,10 @@
 {
   "name": "DD-API V3 UI (demo)",
-  "image": "mcr.microsoft.com/devcontainers/dotnet:1-8.0",
+  "image": "mcr.microsoft.com/devcontainers/base:noble",
   "features": {
     "ghcr.io/devcontainers/features/dotnet:2": {
-      "version": "10.0"
+      "version": "10.0",
+      "aspNetCoreRuntimeVersions": "8.0"
     },
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20"
