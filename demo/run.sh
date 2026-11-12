@@ -14,6 +14,11 @@ fi
 # The server project runs "ng build" before building; make the local Angular CLI available.
 export PATH="$PWD/node_modules/.bin:$PATH"
 
+# Build the client first. The server project picks up ddapiv3ui.client/dist when the
+# project is loaded, which is before its own "ng build" step runs, so on a clean checkout
+# the published wwwroot would otherwise be empty.
+ng build --configuration production
+
 cd "$ROOT/DdApiV3UI.Server"
 if [ ! -f appsettings.json ]; then
   # appsettings*.json is ignored by git; use the demo settings (AquaDesk DD-API V3).
@@ -21,6 +26,16 @@ if [ ! -f appsettings.json ]; then
 fi
 
 dotnet publish -c Release -o "$OUT"
+
+# Safety net: make sure the client is in wwwroot.
+if [ ! -f "$OUT/wwwroot/index.html" ]; then
+  mkdir -p "$OUT/wwwroot"
+  cp -r "$ROOT/ddapiv3ui.client/dist/." "$OUT/wwwroot/"
+fi
+if [ ! -f "$OUT/wwwroot/index.html" ]; then
+  echo "index.html is missing after the build" >&2
+  exit 1
+fi
 
 cd "$OUT"
 echo "Starting the DD-API V3 UI on http://localhost:$PORT"
