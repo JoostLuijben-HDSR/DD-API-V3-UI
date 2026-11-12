@@ -1,5 +1,6 @@
 # CI for this fork only: builds and tests the upstream master and the work branches,
-# so changes can be checked without installing Node/npm locally.
+# and starts the demo branch in a browser, so changes can be checked without
+# installing Node/npm or .NET locally.
 # Runs on every push to the `ci` branch; re-run it from the Actions tab or with
 # `gh run rerun <id>`.
 name: Fork CI (build and test branches)
@@ -21,23 +22,26 @@ jobs:
       matrix:
         ref:
           - master
+          - fix/unit-test-setup
           - fix/datetime-seconds
           - feature/export-all-pages-csv
           - feature/result-table
           - feature/filter-usability
           - feature/friendly-errors
+          - demo
     defaults:
       run:
         working-directory: ddapiv3ui.client
     steps:
       - name: Check out ${{ matrix.ref }}
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: ${{ matrix.ref }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 20
 
@@ -47,20 +51,14 @@ jobs:
       - name: Build (production)
         run: npx ng build --configuration production
 
-      - name: Add test configuration that is missing upstream (CI only)
+      - name: Apply the unit test fix when the branch does not contain it (CI only)
         run: |
-          if [ ! -f tsconfig.spec.json ]; then
-            cat > tsconfig.spec.json <<'EOF'
-          {
-            "extends": "./tsconfig.json",
-            "compilerOptions": {
-              "outDir": "./out-tsc/spec",
-              "types": ["jasmine", "node"]
-            },
-            "files": ["src/test.ts", "src/polyfills.ts"],
-            "include": ["src/**/*.spec.ts", "src/**/*.d.ts"]
-          }
-          EOF
+          git fetch --quiet origin fix/unit-test-setup
+          if git merge-base --is-ancestor FETCH_HEAD HEAD; then
+            echo "Branch already contains fix/unit-test-setup."
+          else
+            git -c user.name=ci -c user.email=ci@example.invalid merge --no-edit --quiet FETCH_HEAD
+            echo "Merged fix/unit-test-setup for this test run only."
           fi
           cat > karma.ci.conf.js <<'EOF'
           const base = require('./karma.conf.js');
@@ -81,3 +79,62 @@ jobs:
 
       - name: Unit tests (Karma, headless Chrome)
         run: npx ng test --watch=false --karma-config=karma.ci.conf.js
+
+  demo-smoke:
+    name: demo in a browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out demo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: demo
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 20
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build and start the demo server
+        run: |
+          mkdir -p smoke-output
+          nohup bash demo/run.sh > smoke-output/server.log 2>&1 &
+          for i in $(seq 1 120); do
+            if curl -fsS http://localhost:8080/ > /dev/null 2>&1; then
+              echo "Server is up after ${i}x5 s"; exit 0
+            fi
+            sleep 5
+          done
+          echo "Server did not start"; tail -50 smoke-output/server.log; exit 1
+
+      - name: Check the server API
+        run: |
+          curl -fsS http://localhost:8080/ | grep -q "<app-root" && echo "index.html OK"
+          curl -fsS http://localhost:8080/ddapi/appsettings | tee smoke-output/appsettings.json
+          echo
+          curl -fsS -X POST http://localhost:8080/ddapi/metadata -H 'Content-Type: application/json' \
+            -d '{"url":"https://ddapi.aquadesk.nl/v3/odata","endPoint":"Observation"}' > smoke-output/metadata.json
+          grep -q "PhenomenonTime/BeginPosition" smoke-output/metadata.json && echo "metadata OK"
+
+      - name: Browser smoke test (Playwright, Chromium)
+        run: |
+          mkdir -p /tmp/pw && cp demo/smoke.mjs /tmp/pw/
+          cd /tmp/pw
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+          BASE_URL=http://localhost:8080 OUT_DIR="$GITHUB_WORKSPACE/smoke-output" node smoke.mjs
+
+      - name: Upload screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: demo-smoke
+          path: smoke-output
+          retention-days: 14
