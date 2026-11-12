@@ -24,6 +24,7 @@ jobs:
           - master
           - fix/unit-test-setup
           - fix/datetime-seconds
+          - fix/json-viewer-null
           - feature/export-all-pages-csv
           - feature/result-table
           - feature/filter-usability
