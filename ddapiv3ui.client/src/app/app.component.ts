@@ -11,6 +11,7 @@ import { PropertyConverter } from './types/property-converter';
 import { ValueConverter } from './types/value-converter';
 import { RequestHeaders } from './types/request-headers';
 import { CsdlProperty } from './types/csdl-property';
+import { toDateTimeOffsetLiteral } from './utils/odata-value';
 
 
 @Component({
@@ -556,7 +557,7 @@ export class AppComponent implements OnInit, OnDestroy {
       case 'Geography':
         return `'${value}'`;
       case 'DateTimeOffset':
-        return `${value}Z`;
+        return toDateTimeOffsetLiteral(String(value));
       case 'Int64':
         return `${Math.round(value)}`;
       default:
