@@ -37,6 +37,7 @@ jobs:
           - feature/simple-search
           - feature/smart-lists
           - feature/picker-dialog
+          - feature/code-lists
           - demo
     defaults:
       run:
