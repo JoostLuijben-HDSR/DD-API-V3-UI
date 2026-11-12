@@ -7,6 +7,12 @@ This repository contains a user interface that helps users compose DD-API OData 
 The code is primarily written in Angular/TypeScript, with a few C# functions to deal with converting an OData CSDL into a structure that is easier to handle by Angular.
 Authentication is also performed on the server side, to prevent CORS issues.
 
+## Installing frontend dependencies
+Use npm 11.19 or newer and run `npm ci` from `ddapiv3ui.client` to install the committed lockfile.
+The project `.npmrc` disables automatic lifecycle scripts, delays new releases by seven days, and saves new direct dependencies as exact versions. Review dependency and lockfile changes before installing; these settings do not prevent malicious code from running when imported.
+Run `npm audit` before accepting dependency updates. A release-age delay can also delay a security fix; review the advisory before making a targeted exception.
+Because automatic lifecycle hooks are disabled, run `node aspnetcore-https.js --name=ddapiv3ui.client` explicitly before `npm start` when setting up the local HTTPS development certificate.
+
 ## State
 The current version lacks some features that we want to add over time. Now implemented is are the OData $filter and $count fragments and a crude display of the resulting data.
 
