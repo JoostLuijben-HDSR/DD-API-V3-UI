@@ -25,6 +25,7 @@ jobs:
           - fix/unit-test-setup
           - fix/datetime-seconds
           - fix/json-viewer-null
+          - fix/restrict-proxy-urls
           - feature/export-all-pages-csv
           - feature/result-table
           - feature/filter-usability
@@ -126,6 +127,25 @@ jobs:
           curl -fsS -X POST http://localhost:8080/ddapi/metadata -H 'Content-Type: application/json' \
             -d '{"url":"https://ddapi.aquadesk.nl/v3/odata","endPoint":"Observation"}' > smoke-output/metadata.json
           grep -q "PhenomenonTime/BeginPosition" smoke-output/metadata.json && echo "metadata OK"
+
+          # The server must forward requests to the configured base URL...
+          curl -fsS -X POST http://localhost:8080/ddapi -H 'Content-Type: application/json' \
+            -d '{"url":"https://ddapi.aquadesk.nl/v3/odata/references?$top=1"}' | grep -q '"value"' && echo "allowed URL OK"
+          # ...and refuse everything else (no open proxy).
+          for url in "https://example.org/" \
+                     "https://ddapi.aquadesk.nl.example.org/v3/odata/references" \
+                     "https://ddapi.aquadesk.nl/v3/other" \
+                     "https://ddapi.aquadesk.nl/v3/odata/../../admin" \
+                     "http://ddapi.aquadesk.nl/v3/odata/references"; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/ddapi \
+              -H 'Content-Type: application/json' -d "{\"url\":\"$url\"}")
+            if [ "$code" != "400" ]; then echo "NOT BLOCKED ($code): $url"; exit 1; fi
+            echo "blocked OK: $url"
+          done
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/ddapi/metadata \
+            -H 'Content-Type: application/json' -d '{"url":"https://example.org","endPoint":"Observation"}')
+          if [ "$code" != "400" ]; then echo "metadata NOT BLOCKED ($code)"; exit 1; fi
+          echo "blocked OK: metadata for https://example.org"
 
       - name: Browser smoke test (Playwright, Chromium)
         run: |
