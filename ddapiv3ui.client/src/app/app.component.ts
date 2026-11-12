@@ -16,6 +16,7 @@ import { RequestHeaders } from './types/request-headers';
 import { CsdlProperty } from './types/csdl-property';
 import { collectColumns, FlatRow, flattenRecord } from './utils/flatten';
 import { keepVisibleColumns, withCombinedValue } from './utils/table-columns';
+import { toDateTimeOffsetLiteral } from './utils/odata-value';
 import { CsvFormat, csvFileName, toCsv } from './utils/csv';
 import { readCount, readNextLink, readRecords, withCount, withMinimumTop } from './utils/odata-url';
 
@@ -601,7 +602,7 @@ export class AppComponent implements OnInit, OnDestroy {
       case 'Geography':
         return `'${value}'`;
       case 'DateTimeOffset':
-        return `${value}Z`;
+        return toDateTimeOffsetLiteral(String(value));
       case 'Int64':
         return `${Math.round(value)}`;
       default:
