@@ -5,24 +5,20 @@
 
   <div class="row gy-3">
     <div class="col-md-4">
-      <mat-form-field appearance="fill"
-                      class="app-form-field-full-width"
-                      subscriptSizing="dynamic">
-        <mat-label>{{'simple.organisation' | t}}</mat-label>
-        <mat-select required
-                    [value]="state.organisation"
-                    (selectionChange)="onOrganisationChange($event.value)">
-          @if (organisations === null && !failed['Organisation']) {
-          <mat-option disabled>{{'simple.loading' | t}}</mat-option>
-          }
-          @if (failed['Organisation']) {
-          <mat-option disabled>{{'simple.loadFailed' | t}}</mat-option>
-          }
-          @for (option of organisations ?? []; track option.value) {
-          <mat-option [value]="option.value">{{option.label}}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <app-reference-picker [label]="'simple.organisation' | t"
+                            [placeholder]="'simple.placeholder' | t"
+                            [required]="true"
+                            [multiple]="false"
+                            [hint]="organisationHint"
+                            recentKey="organisation"
+                            [options]="organisations"
+                            [loadFailed]="!!failed['Organisation']"
+                            [availability]="organisationAvailability"
+                            [availabilityProgress]="organisationProgress"
+                            [hideUnavailable]="true"
+                            [selected]="organisationSelection"
+                            (selectedChange)="onOrganisationSelection($event)">
+      </app-reference-picker>
     </div>
 
     <div class="col-md-2">
@@ -55,9 +51,13 @@
     <div class="col-md-4">
       <app-reference-picker [label]="'simple.compartments' | t"
                             [placeholder]="'simple.placeholder' | t"
+                            recentKey="compartment"
                             [options]="compartments"
                             [loadFailed]="!!failed['Compartment']"
+                            [availability]="facets.Compartment.states"
+                            [availabilityProgress]="facets.Compartment.progress"
                             [selected]="state.compartments"
+                            (opened)="checkFacetList('Compartment', compartments)"
                             (selectedChange)="update({ compartments: $event })">
       </app-reference-picker>
     </div>
@@ -65,9 +65,15 @@
     <div class="col-md-6">
       <app-reference-picker [label]="'simple.packages' | t"
                             [placeholder]="'simple.placeholder' | t"
+                            [hint]="facetHint"
+                            [grouped]="true"
+                            recentKey="measurementPackage"
                             [options]="measurementPackages"
                             [loadFailed]="!!failed['MeasurementPackage']"
+                            [availability]="facets.MeasurementPackage.states"
+                            [availabilityProgress]="facets.MeasurementPackage.progress"
                             [selected]="state.measurementPackages"
+                            (opened)="checkFacetList('MeasurementPackage', measurementPackages)"
                             (selectedChange)="update({ measurementPackages: $event })">
       </app-reference-picker>
     </div>
@@ -75,9 +81,13 @@
     <div class="col-md-6">
       <app-reference-picker [label]="'simple.quantities' | t"
                             [placeholder]="'simple.placeholder' | t"
+                            recentKey="quantity"
                             [options]="quantities"
                             [loadFailed]="!!failed['Quantity']"
+                            [availability]="facets.Quantity.states"
+                            [availabilityProgress]="facets.Quantity.progress"
                             [selected]="state.quantities"
+                            (opened)="checkFacetList('Quantity', quantities)"
                             (selectedChange)="update({ quantities: $event })">
       </app-reference-picker>
     </div>
@@ -86,10 +96,13 @@
       <app-reference-picker [label]="'simple.objects' | t"
                             [placeholder]="'simple.placeholder' | t"
                             [hint]="objectsHint"
+                            recentKey="measurementObject"
                             [options]="measurementObjects"
                             [disabled]="!state.organisation"
                             [loadFailed]="!!failed['MeasurementObject']"
+                            [availability]="facets.MeasurementObject.states"
                             [selected]="state.measurementObjects"
+                            (shownOptions)="checkShownOptions('MeasurementObject', $event)"
                             (selectedChange)="update({ measurementObjects: $event })">
       </app-reference-picker>
     </div>
@@ -99,7 +112,9 @@
                             [placeholder]="'simple.searchPlaceholder' | t"
                             [hint]="'simple.parametersHint' | t"
                             [search]="searchParameters"
+                            [availability]="facets.Parameter.states"
                             [selected]="state.parameters"
+                            (shownOptions)="checkShownOptions('Parameter', $event)"
                             (selectedChange)="update({ parameters: $event })">
       </app-reference-picker>
     </div>
