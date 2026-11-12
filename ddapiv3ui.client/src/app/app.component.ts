@@ -1,4 +1,7 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
 import { Observable, Subject, Subscription, of, takeUntil } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
 import { AppService } from './app.service';
@@ -11,7 +14,8 @@ import { PropertyConverter } from './types/property-converter';
 import { ValueConverter } from './types/value-converter';
 import { RequestHeaders } from './types/request-headers';
 import { CsdlProperty } from './types/csdl-property';
-import { collectColumns, flattenRecord } from './utils/flatten';
+import { collectColumns, FlatRow, flattenRecord } from './utils/flatten';
+import { keepVisibleColumns, withCombinedValue } from './utils/table-columns';
 import { CsvFormat, csvFileName, toCsv } from './utils/csv';
 import { readCount, readNextLink, readRecords, withCount, withMinimumTop } from './utils/odata-url';
 
@@ -87,6 +91,27 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly largeResultThreshold: number = 1000;
   readonly fetchAllPageSize: number = 1000;
   private fetchAllRecords: unknown[] = [];
+
+  // Table view of the result
+  viewMode: 'table' | 'json' = 'table';
+  tableRows: FlatRow[] = [];
+  tableColumns: string[] = [];
+  visibleColumns: string[] = [];
+  tableSearch: string = '';
+  tablePageSizeOptions: number[] = [25, 100, 500];
+  dataSource = new MatTableDataSource<FlatRow>([]);
+
+  @ViewChild(MatPaginator) set tablePaginator(paginator: MatPaginator | undefined) {
+    if (paginator) {
+      this.dataSource.paginator = paginator;
+    }
+  }
+
+  @ViewChild(MatSort) set tableSort(sort: MatSort | undefined) {
+    if (sort) {
+      this.dataSource.sort = sort;
+    }
+  }
 
   propertyTypes: string[] = [
     'String',
@@ -604,6 +629,7 @@ export class AppComponent implements OnInit, OnDestroy {
         error: (error: any) => {
           console.log(error);
           this.result = { error: error };
+          this.refreshTable();
           this.nextUrl = null;
           this.loadingResult = false;
         },
@@ -624,6 +650,7 @@ export class AppComponent implements OnInit, OnDestroy {
           },
           error: (error: any) => {
             this.result = { error: error };
+            this.refreshTable();
             this.nextUrl = null;
             this.loadingResult = false;
           },
@@ -644,6 +671,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.finishFetchAll(null);
       } else {
         this.result = { "@odata.context": this.baseUrl, "value": [], "@odata.nextLink": "" };
+        this.refreshTable();
       }
     }
   }
@@ -654,6 +682,22 @@ export class AppComponent implements OnInit, OnDestroy {
     this.totalCount = readCount(result);
     this.stoppedAtMaxRecords = false;
     this.showLargeJson = false;
+    this.refreshTable();
+  }
+
+  /** Rebuilds the flat table rows from the current result. */
+  refreshTable(): void {
+    this.tableRows = readRecords(this.result).map(record => withCombinedValue(flattenRecord(record)));
+    this.tableColumns = collectColumns(this.tableRows);
+    this.visibleColumns = keepVisibleColumns(this.visibleColumns, this.endPoint?.url ?? '', this.tableColumns);
+    this.dataSource.data = this.tableRows;
+    this.dataSource.filter = this.tableSearch.trim().toLowerCase();
+    this.dataSource.paginator?.firstPage();
+  }
+
+  onTableSearchChange(): void {
+    this.dataSource.filter = this.tableSearch.trim().toLowerCase();
+    this.dataSource.paginator?.firstPage();
   }
 
   /**
@@ -708,6 +752,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.nextUrl = null;
     if (errorResponse && this.fetchAllRecords.length === 0) {
       this.result = errorResponse;
+      this.refreshTable();
       return;
     }
     this.result = {
@@ -718,6 +763,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (errorResponse) {
       this.result.error = errorResponse.error ?? errorResponse;
     }
+    this.refreshTable();
   }
 
   get resultRecordCount(): number {
@@ -736,12 +782,10 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   downloadCsv(): void {
-    const records = readRecords(this.result);
-    if (records.length === 0) {
+    if (this.tableRows.length === 0) {
       return;
     }
-    const rows = records.map(record => flattenRecord(record));
-    const csv = toCsv(rows, collectColumns(rows), { format: this.csvFormat });
+    const csv = toCsv(this.tableRows, this.tableColumns, { format: this.csvFormat });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');

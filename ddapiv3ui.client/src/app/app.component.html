@@ -364,7 +364,68 @@
             <mat-spinner class="app-spinner"></mat-spinner>
             }
             @else if (!fetchingAll) {
-            @if (hideLargeJson) {
+            @if (resultRecordCount > 0) {
+            <div class="row gy-2 align-items-center app-result-toolbar">
+              <div class="col-auto">
+                <mat-button-toggle-group [(value)]="viewMode"
+                                         aria-label="Result view">
+                  <mat-button-toggle value="table">Table</mat-button-toggle>
+                  <mat-button-toggle value="json">JSON</mat-button-toggle>
+                </mat-button-toggle-group>
+              </div>
+              @if (viewMode === 'table') {
+              <div class="col">
+                <mat-form-field appearance="fill"
+                                class="app-form-field-full-width"
+                                subscriptSizing="dynamic">
+                  <mat-label>Columns</mat-label>
+                  <mat-select multiple
+                              [(value)]="visibleColumns">
+                    @for (column of tableColumns; track column) {
+                    <mat-option [value]="column">{{column}}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-3">
+                <mat-form-field appearance="fill"
+                                class="app-form-field-full-width"
+                                subscriptSizing="dynamic">
+                  <mat-label>Search in result</mat-label>
+                  <input matInput
+                         [(ngModel)]="tableSearch"
+                         (ngModelChange)="onTableSearchChange()">
+                </mat-form-field>
+              </div>
+              }
+            </div>
+            }
+            @if (viewMode === 'table' && resultRecordCount > 0) {
+            <div class="app-table-container">
+              <table mat-table
+                     [dataSource]="dataSource"
+                     matSort
+                     class="app-result-table">
+                @for (column of visibleColumns; track column) {
+                <ng-container [matColumnDef]="column">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>{{column}}</th>
+                  <td mat-cell *matCellDef="let row">{{row[column]}}</td>
+                </ng-container>
+                }
+                <tr mat-header-row *matHeaderRowDef="visibleColumns; sticky: true"></tr>
+                <tr mat-row *matRowDef="let row; columns: visibleColumns"></tr>
+              </table>
+            </div>
+            <mat-paginator [pageSizeOptions]="tablePageSizeOptions"
+                           showFirstLastButtons
+                           aria-label="Result pages">
+            </mat-paginator>
+            @if (result.error) {
+            <ngx-json-viewer [json]="result.error">
+            </ngx-json-viewer>
+            }
+            }
+            @else if (hideLargeJson) {
             <div class="app-result-status">
               The result is too large to show as JSON quickly. Use DOWNLOAD CSV, or
               <button mat-button

@@ -4,3 +4,18 @@
   padding: 8px 0;
   color: rgba(0, 0, 0, 0.7);
 }
+
+.app-result-toolbar {
+  margin-bottom: 8px;
+}
+
+.app-table-container {
+  overflow: auto;
+  max-height: 70vh;
+}
+
+.app-result-table th,
+.app-result-table td {
+  white-space: nowrap;
+  padding: 0 12px;
+}
