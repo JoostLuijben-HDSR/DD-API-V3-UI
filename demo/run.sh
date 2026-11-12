@@ -7,6 +7,12 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PORT="${PORT:-8080}"
 OUT="${OUT:-/tmp/ddapi-ui}"
 
+# Do nothing when the UI is already running (for example started from another terminal).
+if curl -fsS -o /dev/null "http://localhost:$PORT/" 2>/dev/null; then
+  echo "The DD-API V3 UI is already running on http://localhost:$PORT"
+  exit 0
+fi
+
 # The C# projects use LangVersion 14 (needs the .NET 10 SDK) and target net8.0
 # (needs the ASP.NET Core 8 runtime to run).
 if ! dotnet --list-sdks | grep -q '^1[0-9]\.'; then
