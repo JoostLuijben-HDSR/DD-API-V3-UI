@@ -847,7 +847,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   /** Rebuilds the flat table rows from the current result. */
   refreshTable(): void {
-    this.problem = this.hasRequested ? explainResponse(this.result) : null;
+    this.problem = this.hasRequested ? explainResponse(this.result, !!this.apiKey) : null;
     this.tableRows = readRecords(this.result).map(record => withCombinedValue(flattenRecord(record)));
     this.tableColumns = collectColumns(this.tableRows);
     this.visibleColumns = keepVisibleColumns(this.visibleColumns, this.endPoint?.url ?? '', this.tableColumns);

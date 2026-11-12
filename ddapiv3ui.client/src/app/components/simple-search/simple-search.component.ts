@@ -137,11 +137,11 @@ export class SimpleSearchComponent implements OnInit, OnChanges, OnDestroy {
         if (count !== null) {
           return { kind: 'count', count };
         }
-        const explanation = explainResponse(response);
+        const explanation = explainResponse(response, !!this.apiKey);
         return { kind: 'failed', reasonKey: `${explanation?.key ?? 'error.general'}.title` };
       }),
       catchError((error: unknown) => {
-        const explanation = explainResponse({ error });
+        const explanation = explainResponse({ error }, !!this.apiKey);
         return of<CountState>({ kind: 'failed', reasonKey: `${explanation?.key ?? 'error.general'}.title` });
       }));
   }

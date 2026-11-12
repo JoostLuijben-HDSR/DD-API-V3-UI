@@ -106,6 +106,8 @@ const NL: Record<string, string> = {
   'error.urlNotAllowed.hint': 'De server stuurt alleen verzoeken door naar de ingestelde basis-URL\'s.',
   'error.general.title': 'De service gaf een foutmelding',
   'error.general.hint': 'Zie de details hieronder.',
+  'error.noKey.title': 'Er is nog geen API-key ingevuld',
+  'error.noKey.hint': 'Deze gegevens zijn alleen met een API-key op te vragen. Vul je key in bij API-key, bovenaan de pagina.',
   // Simple search
   'simple.title': 'Eenvoudig zoeken',
   'simple.intro': 'Kies wat je zoekt. Klik in een veld om alle mogelijkheden te zien, of typ om te zoeken op naam of code.',
@@ -228,6 +230,8 @@ const EN: Record<string, string> = {
   'error.urlNotAllowed.hint': 'The server only forwards requests to the configured base URLs.',
   'error.general.title': 'The service returned an error',
   'error.general.hint': 'See the details below.',
+  'error.noKey.title': 'No API key has been entered yet',
+  'error.noKey.hint': 'This data can only be requested with an API key. Enter your key in the API key field at the top of the page.',
   'simple.title': 'Simple search',
   'simple.intro': 'Choose what you are looking for. Click in a field to see all options, or type to search by name or code.',
   'simple.organisation': 'Water authority',
