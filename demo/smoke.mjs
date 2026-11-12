@@ -174,6 +174,27 @@ try {
   await page.waitForTimeout(500);
   check('JSON view can be shown', await page.locator('ngx-json-viewer').count() > 0);
   await shot('5-json.png');
+
+  // Code lists (references end point)
+  check('the code lists are shown for references', await page.locator('app-code-list-browser').count() === 1);
+  await page.locator('app-code-list-browser button.app-codes-list', { hasText: 'Measurement packages' }).click();
+  await page.locator('app-code-list-browser table tbody tr').first().waitFor({ timeout: 30000 });
+  const packageRows = await page.locator('app-code-list-browser table tbody tr').count();
+  check('a code list shows its contents', packageRows >= 10, `${packageRows} rows`);
+  await page.locator('app-code-list-browser input').nth(1).fill('planten bed');
+  await page.waitForTimeout(800);
+  const plantRows = await page.locator('app-code-list-browser table tbody tr').allInnerTexts();
+  check('a code list can be searched', plantRows.length >= 1 && plantRows.every(r => /planten/i.test(r)), plantRows.join(' | '));
+  await page.locator('app-code-list-browser table tbody tr').first().click();
+  const detail = (await page.locator('.app-codes-detail').innerText()).replace(/\s+/g, ' ');
+  check('a row opens the details', /PT\.BD/.test(detail), detail.slice(0, 120));
+  await shot('6-code-lists.png');
+  await page.locator('.app-codes-detail button', { hasText: 'Search observations' }).click();
+  await page.locator('app-simple-search').waitFor({ timeout: 20000 });
+  await page.waitForTimeout(1500);
+  const chip = await picker('Measurement package').locator('mat-chip-row').allInnerTexts();
+  check('a code can be used to search observations', chip.some(c => /PT\.BD/.test(c)), chip.join(' | '));
+  await shot('7-from-code-list.png');
 } catch (e) {
   check('smoke test ran to the end', false, String(e));
   await shot('error.png').catch(() => {});
