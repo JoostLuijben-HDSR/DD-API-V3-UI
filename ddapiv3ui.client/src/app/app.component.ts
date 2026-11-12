@@ -16,6 +16,8 @@ import { RequestHeaders } from './types/request-headers';
 import { CsdlProperty } from './types/csdl-property';
 import { collectColumns, FlatRow, flattenRecord } from './utils/flatten';
 import { keepVisibleColumns, withCombinedValue } from './utils/table-columns';
+import { fieldDisplayName } from './utils/field-labels';
+import { periodBounds } from './utils/period';
 import { toDateTimeOffsetLiteral } from './utils/odata-value';
 import { CsvFormat, csvFileName, toCsv } from './utils/csv';
 import { readCount, readNextLink, readRecords, withCount, withMinimumTop } from './utils/odata-url';
@@ -101,6 +103,12 @@ export class AppComponent implements OnInit, OnDestroy {
   tableSearch: string = '';
   tablePageSizeOptions: number[] = [25, 100, 500];
   dataSource = new MatTableDataSource<FlatRow>([]);
+
+  // Period filter helper
+  readonly periodPropertyName: string = 'PhenomenonTime/BeginPosition';
+  periodFrom: string = '';
+  periodTo: string = '';
+  periodError: string | null = null;
 
   @ViewChild(MatPaginator) set tablePaginator(paginator: MatPaginator | undefined) {
     if (paginator) {
@@ -539,6 +547,93 @@ export class AppComponent implements OnInit, OnDestroy {
       this.filterItems.splice(index + 1, 1);
     }
     this.generateUrl();
+  }
+
+  emptyFilterItem(): FilterItem {
+    return new FilterItem({
+      isArray: false,
+      isKey: false,
+      isNullable: true,
+      isString: false,
+      name: '',
+      type: ''
+    });
+  }
+
+  /** Adds an empty filter row, joined to the previous row with 'and'. */
+  addFilterItem(): void {
+    const last = this.filterItems[this.filterItems.length - 1];
+    if (last && last.logical == null) {
+      last.logical = 'and';
+    }
+    this.filterItems.push(this.emptyFilterItem());
+    this.generateUrl();
+  }
+
+  /** Removes a filter row. At least one (empty) row always remains. */
+  removeFilterItem(index: number): void {
+    const wasLast = index === this.filterItems.length - 1;
+    this.filterItems.splice(index, 1);
+    if (this.filterItems.length === 0) {
+      this.filterItems.push(this.emptyFilterItem());
+    } else if (wasLast) {
+      this.filterItems[this.filterItems.length - 1].logical = null;
+    }
+    this.generateUrl();
+  }
+
+  /** Adds a filter row with a property, comparer and value already filled in. */
+  appendFilterItem(property: Property, comparer: string, value: any): void {
+    const item = new FilterItem(property);
+    item.comparer = { value: comparer, data: this.comparerMapping[comparer] };
+    item.value = value;
+    const lastIndex = this.filterItems.length - 1;
+    const last = this.filterItems[lastIndex];
+    if (last && last.property.name === '') {
+      this.filterItems[lastIndex] = item;
+    } else {
+      if (last && last.logical == null) {
+        last.logical = 'and';
+      }
+      this.filterItems.push(item);
+    }
+  }
+
+  get periodProperty(): Property | undefined {
+    return this.properties.find(p => p.name === this.periodPropertyName);
+  }
+
+  /** Adds 'from' (ge) and 'to, inclusive' (lt next day) filters on the measurement time. */
+  addPeriodFilter(): void {
+    const property = this.periodProperty;
+    if (!property) {
+      return;
+    }
+    if (!this.periodFrom && !this.periodTo) {
+      this.periodError = 'Choose a start date, an end date or both.';
+      return;
+    }
+    const bounds = periodBounds(this.periodFrom || null, this.periodTo || null);
+    if (!bounds) {
+      this.periodError = 'The end date is before the start date.';
+      return;
+    }
+    this.periodError = null;
+    if (bounds.from) {
+      this.appendFilterItem(property, 'ge', bounds.from);
+    }
+    if (bounds.toExclusive) {
+      this.appendFilterItem(property, 'lt', bounds.toExclusive);
+    }
+    this.generateUrl();
+  }
+
+  propertyDisplayName(property: Property): string {
+    return fieldDisplayName(property.name);
+  }
+
+  columnDisplayName(column: string): string {
+    return fieldDisplayName(column);
   }
 
   //functions

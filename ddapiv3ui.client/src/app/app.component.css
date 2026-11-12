@@ -19,3 +19,11 @@
   white-space: nowrap;
   padding: 0 12px;
 }
+
+.app-period-label {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.app-period-error {
+  color: #b00020;
+}

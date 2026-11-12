@@ -1,8 +1,9 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { Observable, startWith, filter, debounceTime, distinctUntilChanged, switchMap, map, Subject, takeUntil } from 'rxjs';
+import { Observable, of, startWith, filter, debounceTime, distinctUntilChanged, switchMap, map, Subject, takeUntil } from 'rxjs';
 import { AppService } from '../../app.service';
 import { FilterItem } from '../../types/filter-item';
+import { ReferenceOption, toReferenceOptions } from '../../utils/reference-option';
 
 @Component({
   selector: 'app-filter-item-value',
@@ -25,7 +26,7 @@ export class FilterItemValueComponent {
   destroySubscriptions$ = new Subject<void>();
   autoCompleteFormControl = new FormControl<string>('');
   multiSelectFormControl = new FormControl<string>('');
-  valueOptions$!: Observable<any[]>;
+  valueOptions$!: Observable<ReferenceOption[]>;
   referenceType!: string;
   property: string = 'Code';
   valueType!: string;
@@ -98,10 +99,10 @@ export class FilterItemValueComponent {
           this.valueChange.emit(this.filterItem.value);
           if ((value as string).length > 0) {
             return this.service.get(this.getUrl(this.filterItem.value), this.apiKey).pipe(map(result => {
-              return result.value?.map((v: any) => v[this.property]);
+              return toReferenceOptions(result?.value, this.property);
             }));
           } else {
-            return [];
+            return of([]);
           }         
         })
       )
@@ -119,7 +120,7 @@ export class FilterItemValueComponent {
           this.valueChange.emit(this.filterItem.value);
           var filter = value?.split(',').reverse()[0].trim() ?? '';
           return this.service.get(this.getUrl(filter), this.apiKey).pipe(map(result => {
-            return result.value?.map((v: any) => v[this.property]);
+            return toReferenceOptions(result?.value, this.property);
           }));
         })
       )
@@ -150,7 +151,7 @@ export class FilterItemValueComponent {
 
   //functions
   getUrl(value: string): string {
-    var url = `${this.baseUrl}/references?$top=5`;
+    var url = `${this.baseUrl}/references?$top=10`;
     switch (this.endPoint) {
       case 'observations':
         url += `&$filter=Type eq '${this.referenceType}' and startswith(tolower(${this.property}),'${value.toLowerCase()}')`;
