@@ -208,6 +208,27 @@ export function referenceToRow(record: unknown): FlatRow {
   return row;
 }
 
+/**
+ * Keeps only the most recent version of references that occur several times with the same
+ * code and organisation (AquaDesk lists older versions too, for example three times PT.BD).
+ * The order of first appearance is kept.
+ */
+export function latestVersions(records: unknown[]): unknown[] {
+  const latest = new Map<string, { record: unknown, modified: string, index: number }>();
+  records.forEach((record, index) => {
+    const fields = record !== null && typeof record === 'object' ? record as Record<string, unknown> : {};
+    const key = `${String(fields['Code'] ?? '')}|${String(fields['Organisation'] ?? '')}`;
+    const modified = typeof fields['ModifiedOn'] === 'string' ? fields['ModifiedOn'] as string : '';
+    const current = latest.get(key);
+    if (!current) {
+      latest.set(key, { record, modified, index });
+    } else if (modified > current.modified) {
+      latest.set(key, { record, modified, index: current.index });
+    }
+  });
+  return [...latest.values()].sort((a, b) => a.index - b.index).map(entry => entry.record);
+}
+
 /** The location codes of a monitoring network record. */
 export function networkLocations(record: unknown): string[] {
   const objects = record !== null && typeof record === 'object' ? (record as Record<string, unknown>)['MeasurementObjects'] : undefined;

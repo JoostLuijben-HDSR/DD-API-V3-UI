@@ -6,7 +6,7 @@ import { Subject, Subscription } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 import { I18nService } from '../../i18n/i18n.service';
 import {
-  CODE_LIST_GROUPS, CODE_LISTS, CodeListDefinition, CodeListGroup, filterCodeLists, groupName, listDescription,
+  CODE_LIST_GROUPS, CODE_LISTS, CodeListDefinition, CodeListGroup, filterCodeLists, groupName, latestVersions, listDescription,
   listName, networkLocations, referenceToRow, SearchPreset, searchRows
 } from '../../utils/code-lists';
 import { csvFileName, toCsv } from '../../utils/csv';
@@ -16,6 +16,8 @@ import { optionLabel, PickerOption } from '../../utils/simple-search';
 import { MAX_REFERENCES, ReferenceListService } from '../simple-search/reference-list.service';
 
 const ORGANISATION_KEY = 'simpleSearch.organisation';
+/** Technical fields that are not shown in the details. */
+const HIDDEN_DETAIL_FIELDS = ['Id', 'Type'];
 /** Maximum number of shown rows that can be handed to the simple search at once. */
 const MAX_USE_ALL = 500;
 
@@ -53,6 +55,7 @@ export class CodeListBrowserComponent implements OnInit, OnChanges, OnDestroy {
   truncated: boolean = false;
   shownRows: FlatRow[] = [];
   totalRows: number = 0;
+  mergedVersions: number = 0;
   dataSource = new MatTableDataSource<FlatRow>([]);
   detail: { row: FlatRow, record: unknown, fields: DetailField[] } | null = null;
 
@@ -179,7 +182,7 @@ export class CodeListBrowserComponent implements OnInit, OnChanges, OnDestroy {
 
   openDetail(row: FlatRow): void {
     const fields: DetailField[] = Object.entries(row)
-      .filter(([, value]) => value !== null && value !== '')
+      .filter(([name, value]) => value !== null && value !== '' && !HIDDEN_DETAIL_FIELDS.includes(name))
       .map(([name, value]) => ({ name, label: fieldLabel(name, this.i18n.lang) ?? name, value: String(value) }));
     this.detail = { row, record: this.rowRecords.get(row), fields };
   }
@@ -269,6 +272,7 @@ export class CodeListBrowserComponent implements OnInit, OnChanges, OnDestroy {
     this.setRows([]);
     this.failed = false;
     this.truncated = false;
+    this.mergedVersions = 0;
     this.loading = false;
     const list = this.selected;
     if (!list || !this.baseUrl || this.needsOrganisation || this.needsSearchText) {
@@ -286,7 +290,9 @@ export class CodeListBrowserComponent implements OnInit, OnChanges, OnDestroy {
       }
       this.truncated = !list.serverSearch && records.length >= MAX_REFERENCES;
       this.rowRecords.clear();
-      const rows = records.map(record => {
+      const unique = latestVersions(records);
+      this.mergedVersions = records.length - unique.length;
+      const rows = unique.map(record => {
         const row = referenceToRow(record);
         this.rowRecords.set(row, record);
         return row;
