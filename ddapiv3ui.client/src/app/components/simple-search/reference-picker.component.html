@@ -77,6 +77,13 @@
     @for (section of sections; track $index) {
     @if (section.label) {
     <mat-optgroup [label]="section.label">
+      @if (section.groupAction) {
+      <mat-option [value]="section.groupAction"
+                  class="app-picker-action">
+        <mat-icon>done_all</mat-icon>
+        {{'list.selectGroup' | t: { count: section.groupAction.options?.length } }}
+      </mat-option>
+      }
       @for (row of section.rows; track row.option.value) {
       <mat-option [value]="row.option"
                   [disabled]="row.state === 'no'"

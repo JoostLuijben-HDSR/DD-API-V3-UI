@@ -18,7 +18,9 @@ export interface AvailabilityProgressInfo {
 }
 
 interface PickerAction {
-  action: 'selectAll' | 'more' | 'toggleUnavailable';
+  action: 'selectAll' | 'more' | 'toggleUnavailable' | 'selectGroup';
+  /** For 'selectGroup': the options of the group. */
+  options?: PickerOption[];
 }
 
 interface Row {
@@ -30,6 +32,8 @@ interface Row {
 interface Section {
   label: string;
   rows: Row[];
+  /** For groups: action that chooses the whole group, if there is more than one option. */
+  groupAction: PickerAction | null;
 }
 
 function isAction(value: unknown): value is PickerAction {
@@ -244,6 +248,9 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
         const usable = this.allMatches.filter(o => this.availability?.[o.value] !== 'no');
         this.choose(usable);
         return;
+      } else if (value.action === 'selectGroup') {
+        this.choose((value.options ?? []).filter(o => this.availability?.[o.value] !== 'no'));
+        return;
       }
       this.textControl.setValue(this.text, { emitEvent: false });
       if (this.textInput) {
@@ -307,7 +314,7 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.text.trim() && this.recentKey && this.recent.length > 0 && !this.search) {
       const split = withRecentFirst(matches, this.recent);
       if (split.recent.length > 0) {
-        sections.push({ label: this.i18n.t('list.recent'), rows: split.recent.map(o => this.row(o)) });
+        sections.push({ label: this.i18n.t('list.recent'), rows: split.recent.map(o => this.row(o)), groupAction: null });
         rest = split.others;
       }
     }
@@ -315,10 +322,15 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
     this.moreCount = Math.min(this.pageSize, rest.length - page.length);
     if (this.grouped && !this.text.trim()) {
       for (const group of groupByCodePrefix(page)) {
-        sections.push({ label: group.label, rows: group.options.map(o => this.row(o)) });
+        const usable = group.options.filter(o => this.availability?.[o.value] !== 'no');
+        sections.push({
+          label: group.label,
+          rows: group.options.map(o => this.row(o)),
+          groupAction: this.multiple && group.label && usable.length > 1 ? { action: 'selectGroup', options: usable } : null
+        });
       }
     } else {
-      sections.push({ label: '', rows: page.map(o => this.row(o)) });
+      sections.push({ label: '', rows: page.map(o => this.row(o)), groupAction: null });
     }
     this.sections = sections;
 

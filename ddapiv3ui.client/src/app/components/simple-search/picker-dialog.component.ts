@@ -31,6 +31,8 @@ interface Item {
   /** For header rows an empty placeholder, so templates never deal with null. */
   option: PickerOption;
   parts: TextPart[];
+  /** For header rows: the options in the group. */
+  members: PickerOption[];
 }
 
 const HEADER_OPTION: PickerOption = { value: '', label: '' };
@@ -126,6 +128,28 @@ export class PickerDialogComponent implements OnInit, OnDestroy {
     this.chosen = [...this.chosen, ...usable.filter(o => !known.has(o.value))];
   }
 
+  /** Options of a group that can be chosen (not marked as having no data). */
+  private usableMembers(item: Item): PickerOption[] {
+    return item.members.filter(o => this.availability?.[o.value] !== 'no');
+  }
+
+  groupState(item: Item): 'all' | 'some' | 'none' {
+    const members = this.usableMembers(item);
+    const chosen = members.filter(o => this.isChosen(o)).length;
+    if (chosen === 0) {
+      return 'none';
+    }
+    return chosen === members.length ? 'all' : 'some';
+  }
+
+  /** Ticking a group chooses all its options; unticking clears them. */
+  toggleGroup(item: Item, checked: boolean): void {
+    const members = this.usableMembers(item);
+    const values = new Set(members.map(o => o.value));
+    const others = this.chosen.filter(c => !values.has(c.value));
+    this.chosen = checked ? [...others, ...members] : others;
+  }
+
   remove(option: PickerOption): void {
     this.chosen = this.chosen.filter(c => c.value !== option.value);
   }
@@ -168,11 +192,11 @@ export class PickerDialogComponent implements OnInit, OnDestroy {
 
     const items: Item[] = [];
     const add = (option: PickerOption) =>
-      items.push({ key: 'o:' + option.value, header: null, option, parts: highlightParts(option.label, text) });
+      items.push({ key: 'o:' + option.value, header: null, option, parts: highlightParts(option.label, text), members: [] });
     if (this.data.grouped && !text.trim()) {
       for (const group of groupByCodePrefix(matches)) {
         if (group.label) {
-          items.push({ key: 'h:' + group.label, header: group.label, option: HEADER_OPTION, parts: [] });
+          items.push({ key: 'h:' + group.label, header: group.label, option: HEADER_OPTION, parts: [], members: group.options });
         }
         group.options.forEach(add);
       }

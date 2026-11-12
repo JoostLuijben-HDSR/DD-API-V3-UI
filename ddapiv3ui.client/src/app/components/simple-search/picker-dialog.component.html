@@ -60,7 +60,18 @@
         <div *cdkVirtualFor="let item of items; trackBy: trackItem"
              class="app-dialog-row">
           @if (item.header) {
+          @if (data.multiple) {
+          <mat-checkbox class="app-dialog-group"
+                        [checked]="groupState(item) === 'all'"
+                        [indeterminate]="groupState(item) === 'some'"
+                        [title]="'list.groupToggle' | t"
+                        (change)="toggleGroup(item, $event.checked)">
+            {{item.header}} ({{item.members.length}})
+          </mat-checkbox>
+          }
+          @else {
           <div class="app-dialog-group">{{item.header}}</div>
+          }
           }
           @if (!item.header) {
           @if (data.multiple) {
