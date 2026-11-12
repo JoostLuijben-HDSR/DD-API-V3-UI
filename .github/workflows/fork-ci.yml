@@ -105,9 +105,13 @@ jobs:
         run: |
           mkdir -p smoke-output
           nohup bash demo/run.sh > smoke-output/server.log 2>&1 &
+          pid=$!
           for i in $(seq 1 120); do
             if curl -fsS http://localhost:8080/ > /dev/null 2>&1; then
               echo "Server is up after ${i}x5 s"; exit 0
+            fi
+            if ! kill -0 "$pid" 2>/dev/null; then
+              echo "demo/run.sh stopped before the server was up"; tail -50 smoke-output/server.log; exit 1
             fi
             sleep 5
           done
