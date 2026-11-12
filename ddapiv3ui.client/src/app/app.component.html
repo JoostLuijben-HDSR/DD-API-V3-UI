@@ -288,14 +288,99 @@
             </button>
           </div>
 
+          <div class="col-12">
+            <div class="row gy-2 align-items-center">
+              <div class="col-auto">
+                <button mat-raised-button
+                        [disabled]="loadingResult"
+                        title="Follow all next links and combine the pages into one result"
+                        (click)="fetchAll()">
+                  FETCH ALL PAGES
+                </button>
+              </div>
+              <div class="col-2">
+                <mat-form-field appearance="fill"
+                                class="app-form-field-full-width"
+                                subscriptSizing="dynamic">
+                  <mat-label>Max. records</mat-label>
+                  <mat-select [(value)]="maxRecords"
+                              [disabled]="loadingResult">
+                    @for (option of maxRecordsOptions; track option) {
+                    <mat-option [value]="option">{{option | number}}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col"></div>
+              <div class="col-3">
+                <mat-form-field appearance="fill"
+                                class="app-form-field-full-width"
+                                subscriptSizing="dynamic">
+                  <mat-label>CSV format</mat-label>
+                  <mat-select [(value)]="csvFormat">
+                    @for (format of csvFormats; track format.value) {
+                    <mat-option [value]="format.value">{{format.text}}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-auto">
+                <button mat-raised-button
+                        color="primary"
+                        [disabled]="loadingResult || resultRecordCount === 0"
+                        title="Download the records in the result as a CSV file"
+                        (click)="downloadCsv()">
+                  DOWNLOAD CSV
+                </button>
+              </div>
+            </div>
+          </div>
+
+          @if (fetchingAll) {
+          <div class="col-12">
+            <mat-progress-bar [mode]="totalCount ? 'determinate' : 'indeterminate'"
+                              [value]="fetchProgressPercent">
+            </mat-progress-bar>
+            <div class="app-result-status">
+              <span>Fetched {{fetchedCount | number}}</span>
+              @if (totalCount != null) {<span>&nbsp;of {{totalCount | number}}</span>}
+              <span>&nbsp;records&hellip;</span>
+            </div>
+          </div>
+          }
+          @else if (result && resultRecordCount > 0) {
+          <div class="col-12 app-result-status">
+            <span>{{resultRecordCount | number}} records in result</span>
+            @if (totalCount != null) {<span>, {{totalCount | number}} in total</span>}
+            <span>.</span>
+            @if (nextUrl) {<span>&nbsp;Use NEXT or FETCH ALL PAGES for more.</span>}
+            @if (stoppedAtMaxRecords) {<span>&nbsp;Stopped at the maximum of {{maxRecords | number}} records.</span>}
+          </div>
+          }
+
           @if (result) {
           <div class="col-12">
-            @if (loadingResult) {
+            @if (loadingResult && !fetchingAll) {
             <mat-spinner class="app-spinner"></mat-spinner>
+            }
+            @else if (!fetchingAll) {
+            @if (hideLargeJson) {
+            <div class="app-result-status">
+              The result is too large to show as JSON quickly. Use DOWNLOAD CSV, or
+              <button mat-button
+                      (click)="showLargeJson = true">
+                SHOW JSON ANYWAY
+              </button>
+            </div>
+            @if (result.error) {
+            <ngx-json-viewer [json]="result.error">
+            </ngx-json-viewer>
+            }
             }
             @else {
             <ngx-json-viewer [json]="result">
             </ngx-json-viewer>
+            }
             }
           </div>
           }

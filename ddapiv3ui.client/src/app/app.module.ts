@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgxJsonViewerModule } from 'ngx-json-viewer';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { FilterItemValueComponent } from './components/filter-item-value/filter-item-value.component';
@@ -35,6 +36,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
     MatIconModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatAutocompleteModule,
     MatExpansionModule,
     NgxJsonViewerModule

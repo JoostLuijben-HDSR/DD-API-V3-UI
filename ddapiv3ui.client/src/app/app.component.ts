@@ -11,6 +11,9 @@ import { PropertyConverter } from './types/property-converter';
 import { ValueConverter } from './types/value-converter';
 import { RequestHeaders } from './types/request-headers';
 import { CsdlProperty } from './types/csdl-property';
+import { collectColumns, flattenRecord } from './utils/flatten';
+import { CsvFormat, csvFileName, toCsv } from './utils/csv';
+import { readCount, readNextLink, readRecords, withCount, withMinimumTop } from './utils/odata-url';
 
 
 @Component({
@@ -67,6 +70,23 @@ export class AppComponent implements OnInit, OnDestroy {
   requestHeaders: RequestHeaders | null = null;
   result: any | null = null;
   loadingResult: boolean = false;
+
+  // Fetch all pages and CSV export
+  maxRecordsOptions: number[] = [10000, 50000, 100000, 250000];
+  maxRecords: number = 50000;
+  csvFormats: { value: CsvFormat, text: string }[] = [
+    { value: 'excel-nl', text: 'Excel (semicolon, decimal comma)' },
+    { value: 'standard', text: 'Standard (comma, decimal point)' }
+  ];
+  csvFormat: CsvFormat = 'excel-nl';
+  fetchingAll: boolean = false;
+  fetchedCount: number = 0;
+  totalCount: number | null = null;
+  stoppedAtMaxRecords: boolean = false;
+  showLargeJson: boolean = false;
+  readonly largeResultThreshold: number = 1000;
+  readonly fetchAllPageSize: number = 1000;
+  private fetchAllRecords: unknown[] = [];
 
   propertyTypes: string[] = [
     'String',
@@ -579,8 +599,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .get(this.url, this.apiKey, this.coordinateSystem).pipe(takeUntil(this.destroySubscriptions$))
       .subscribe({
         next: (result: any) => {
-          this.result = result;
-          this.nextUrl = result['@odata.nextLink'];
+          this.setSinglePageResult(result);
         },
         error: (error: any) => {
           console.log(error);
@@ -601,8 +620,7 @@ export class AppComponent implements OnInit, OnDestroy {
         .get(this.nextUrl, this.apiKey, this.coordinateSystem).pipe(takeUntil(this.destroySubscriptions$))
         .subscribe({
           next: (result: any) => {
-            this.result = result;
-            this.nextUrl = result['@odata.nextLink'];
+            this.setSinglePageResult(result);
           },
           error: (error: any) => {
             this.result = { error: error };
@@ -621,8 +639,118 @@ export class AppComponent implements OnInit, OnDestroy {
       this.request$.unsubscribe();
       this.request$ = undefined;
       this.loadingResult = false;
-      this.result = { "@odata.context": this.baseUrl, "value": [], "@odata.nextLink": "" };
+      if (this.fetchingAll) {
+        // Keep the records that were already fetched.
+        this.finishFetchAll(null);
+      } else {
+        this.result = { "@odata.context": this.baseUrl, "value": [], "@odata.nextLink": "" };
+      }
     }
+  }
+
+  setSinglePageResult(result: any): void {
+    this.result = result;
+    this.nextUrl = readNextLink(result);
+    this.totalCount = readCount(result);
+    this.stoppedAtMaxRecords = false;
+    this.showLargeJson = false;
+  }
+
+  /**
+   * Follows @odata.nextLink until all pages are fetched, or until the maximum number of
+   * records is reached. The records are combined into one result, which can be exported.
+   */
+  fetchAll(): void {
+    this.loadingResult = true;
+    this.fetchingAll = true;
+    this.fetchAllRecords = [];
+    this.fetchedCount = 0;
+    this.totalCount = null;
+    this.stoppedAtMaxRecords = false;
+    this.showLargeJson = false;
+    this.fetchPage(withCount(withMinimumTop(this.url, this.fetchAllPageSize)));
+  }
+
+  private fetchPage(url: string): void {
+    this.request$ = this.service
+      .get(url, this.apiKey, this.coordinateSystem).pipe(takeUntil(this.destroySubscriptions$))
+      .subscribe({
+        next: (response: any) => {
+          if (!response || response.error || !Array.isArray(response.value)) {
+            this.finishFetchAll(response ?? { error: { message: 'Empty response from the service.' } });
+            return;
+          }
+          this.fetchAllRecords.push(...readRecords(response));
+          this.totalCount = readCount(response) ?? this.totalCount;
+          const next = readNextLink(response);
+          if (this.fetchAllRecords.length >= this.maxRecords) {
+            this.stoppedAtMaxRecords = next != null || this.fetchAllRecords.length > this.maxRecords;
+            this.fetchAllRecords.length = this.maxRecords;
+            this.fetchedCount = this.fetchAllRecords.length;
+            this.finishFetchAll(null);
+          } else if (next) {
+            this.fetchedCount = this.fetchAllRecords.length;
+            this.fetchPage(next);
+          } else {
+            this.fetchedCount = this.fetchAllRecords.length;
+            this.finishFetchAll(null);
+          }
+        },
+        error: (error: any) => {
+          this.finishFetchAll({ error: error });
+        }
+      });
+  }
+
+  private finishFetchAll(errorResponse: any | null): void {
+    this.fetchingAll = false;
+    this.loadingResult = false;
+    this.nextUrl = null;
+    if (errorResponse && this.fetchAllRecords.length === 0) {
+      this.result = errorResponse;
+      return;
+    }
+    this.result = {
+      "@odata.context": this.baseUrl,
+      "@odata.count": this.totalCount,
+      "value": this.fetchAllRecords
+    };
+    if (errorResponse) {
+      this.result.error = errorResponse.error ?? errorResponse;
+    }
+  }
+
+  get resultRecordCount(): number {
+    return readRecords(this.result).length;
+  }
+
+  get fetchProgressPercent(): number {
+    if (!this.totalCount) {
+      return 0;
+    }
+    return Math.min(100, Math.round(100 * this.fetchedCount / Math.min(this.totalCount, this.maxRecords)));
+  }
+
+  get hideLargeJson(): boolean {
+    return this.resultRecordCount > this.largeResultThreshold && !this.showLargeJson;
+  }
+
+  downloadCsv(): void {
+    const records = readRecords(this.result);
+    if (records.length === 0) {
+      return;
+    }
+    const rows = records.map(record => flattenRecord(record));
+    const csv = toCsv(rows, collectColumns(rows), { format: this.csvFormat });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = csvFileName(this.endPoint?.url ?? 'result');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   }
 
 }
