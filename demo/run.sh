@@ -22,7 +22,7 @@ ng build --configuration production
 cd "$ROOT/DdApiV3UI.Server"
 if [ ! -f appsettings.json ]; then
   # appsettings*.json is ignored by git; use the demo settings (AquaDesk DD-API V3).
-  cp "$ROOT/demo/appsettings.demo.json" appsettings.json
+  cp "$ROOT/demo/demo-settings.json" appsettings.json
 fi
 
 dotnet publish -c Release -o "$OUT"
