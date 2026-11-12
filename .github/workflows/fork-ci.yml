@@ -26,6 +26,9 @@ jobs:
           - fix/datetime-seconds
           - fix/json-viewer-null
           - fix/restrict-proxy-urls
+          - fix/mask-api-key-input
+          - fix/api-key-session-storage
+          - security/npm-install-policy
           - feature/export-all-pages-csv
           - feature/result-table
           - feature/filter-usability
