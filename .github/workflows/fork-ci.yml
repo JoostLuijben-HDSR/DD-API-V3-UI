@@ -36,6 +36,7 @@ jobs:
           - feature/i18n
           - feature/simple-search
           - feature/smart-lists
+          - feature/picker-dialog
           - demo
     defaults:
       run:
