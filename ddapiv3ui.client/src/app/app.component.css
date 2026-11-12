@@ -57,3 +57,7 @@
   transform: scale(0.85);
   transform-origin: left top;
 }
+
+.app-advanced {
+  margin-bottom: 16px;
+}

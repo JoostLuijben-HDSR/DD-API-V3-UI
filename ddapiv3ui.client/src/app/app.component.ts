@@ -89,6 +89,10 @@ export class AppComponent implements OnInit, OnDestroy {
     { value: 'standard', textKey: 'action.csvStandard' }
   ];
   readonly langs: Lang[] = LANGS;
+
+  // Simple search (observations)
+  simpleFilter: string = '';
+  readonly simpleSearchPageSize: number = 100;
   csvFormat: CsvFormat = 'excel-nl';
   fetchingAll: boolean = false;
   fetchedCount: number = 0;
@@ -694,20 +698,51 @@ export class AppComponent implements OnInit, OnDestroy {
       this.url += `&$select=${this.selectProperties.map(p => p.name).join(',')}`;
     }
     let validFilterItems = this.filterItems.filter((item, index) => this.validateFilterItem(item, index));
+    let advancedFilter = '';
     if (validFilterItems?.length > 0) {
-      this.url += '&$filter=';
       validFilterItems.forEach((filterItem, index, all) => {
         let propertyFormat = filterItem.propertyConverter.data?.format ?? '<property>';
         let valueFormat = filterItem.valueConverter.data?.format ?? '<value>';
         let valueType = filterItem.propertyConverter.data?.outputType ?? filterItem.property.type;
         let value = this.formatFilterValue(filterItem.value, valueType);
         let filterUrl = filterItem.comparer.data.format.replace('<propertyformat>', propertyFormat.replace('<property>', filterItem.property.name).replace('<propertyconverterinputvalue>', filterItem.propertyConverter.data?.inputValue)).replace('<valueformat>', valueFormat.replace('<value>', value));
-        this.url += filterUrl;
+        advancedFilter += filterUrl;
         if (index < all.length - 1) {
-          this.url += ` ${filterItem.logical} `;
+          advancedFilter += ` ${filterItem.logical} `;
         }
       })
     }
+    const simpleFilter = this.showSimpleSearch ? this.simpleFilter : '';
+    const parts = [simpleFilter, simpleFilter && advancedFilter ? `(${advancedFilter})` : advancedFilter].filter(part => !!part);
+    if (parts.length > 0) {
+      this.url += '&$filter=' + parts.join(' and ');
+    }
+  }
+
+  get showSimpleSearch(): boolean {
+    return this.endPoint?.url === 'observations';
+  }
+
+  onSimpleFilterChange(filter: string): void {
+    this.simpleFilter = filter;
+    this.generateUrl();
+  }
+
+  /** Shows the first page of the simple search in the table. */
+  showSimpleResults(): void {
+    if (this.pageSize < this.simpleSearchPageSize) {
+      this.pageSize = this.simpleSearchPageSize;
+    }
+    this.viewMode = 'table';
+    this.generateUrl();
+    this.get();
+  }
+
+  /** Fetches all observations of the simple search. */
+  fetchAllSimpleResults(): void {
+    this.viewMode = 'table';
+    this.generateUrl();
+    this.fetchAll();
   }
 
   formatFilterValue(value: any, valueType: string): any {

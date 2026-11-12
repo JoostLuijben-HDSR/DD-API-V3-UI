@@ -19,6 +19,9 @@ import { NgxJsonViewerModule } from 'ngx-json-viewer';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { FilterItemValueComponent } from './components/filter-item-value/filter-item-value.component';
 import { TranslatePipe } from './i18n/translate.pipe';
+import { MatChipsModule } from '@angular/material/chips';
+import { ReferencePickerComponent } from './components/simple-search/reference-picker.component';
+import { SimpleSearchComponent } from './components/simple-search/simple-search.component';
 import { TranslatedPaginatorIntl } from './i18n/translated-paginator-intl';
 import { MatExpansionModule } from '@angular/material/expansion';
 
@@ -26,7 +29,9 @@ import { MatExpansionModule } from '@angular/material/expansion';
   declarations: [
     AppComponent,
     FilterItemValueComponent,
-    TranslatePipe
+    TranslatePipe,
+    ReferencePickerComponent,
+    SimpleSearchComponent
   ],
   imports: [
     BrowserModule,
@@ -46,6 +51,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
     MatProgressBarModule,
     MatAutocompleteModule,
     MatExpansionModule,
+    MatChipsModule,
     NgxJsonViewerModule
   ],
   providers: [

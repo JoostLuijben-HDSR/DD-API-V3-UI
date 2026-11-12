@@ -1,0 +1,29 @@
+.app-simple-search {
+  background-color: #f3f6fb;
+  border: 1px solid #d5deeb;
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.app-simple-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.app-simple-intro {
+  margin: 0 0 12px 0;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.app-simple-footer {
+  margin-top: 12px;
+}
+
+.app-simple-count {
+  font-size: 1.05rem;
+}
+
+.app-simple-error {
+  color: #b00020;
+}

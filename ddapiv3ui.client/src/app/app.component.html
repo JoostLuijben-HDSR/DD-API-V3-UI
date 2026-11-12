@@ -66,6 +66,26 @@
     </div>
 
 
+    @if (showSimpleSearch) {
+    <div class="col-12 gy-3">
+      <app-simple-search [baseUrl]="baseUrl"
+                         [apiKey]="apiKey"
+                         [busy]="loadingResult"
+                         (filterChange)="onSimpleFilterChange($event)"
+                         (show)="showSimpleResults()"
+                         (fetchAll)="fetchAllSimpleResults()">
+      </app-simple-search>
+    </div>
+    }
+
+    <div class="col-12 gy-3">
+      <mat-expansion-panel class="app-advanced"
+                           [expanded]="!showSimpleSearch">
+        <mat-expansion-panel-header>
+          <mat-panel-title>{{'advanced.title' | t}}</mat-panel-title>
+          <mat-panel-description>{{'advanced.description' | t}}</mat-panel-description>
+        </mat-expansion-panel-header>
+        <div class="row">
     <div class="col-2 gy-3">
       <mat-form-field appearance="fill"
                       class="app-form-field-full-width">
@@ -323,6 +343,10 @@
         <ngx-json-viewer [json]="requestHeaders">
         </ngx-json-viewer>
       </div>
+    </div>
+
+        </div>
+      </mat-expansion-panel>
     </div>
 
     <div class="col-12">

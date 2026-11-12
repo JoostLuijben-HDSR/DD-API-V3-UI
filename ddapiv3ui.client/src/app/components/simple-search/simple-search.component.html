@@ -1,0 +1,153 @@
+<section class="app-simple-search"
+         [attr.aria-label]="'simple.title' | t">
+  <h2 class="app-simple-title">{{'simple.title' | t}}</h2>
+  <p class="app-simple-intro">{{'simple.intro' | t}}</p>
+
+  <div class="row gy-3">
+    <div class="col-md-4">
+      <mat-form-field appearance="fill"
+                      class="app-form-field-full-width"
+                      subscriptSizing="dynamic">
+        <mat-label>{{'simple.organisation' | t}}</mat-label>
+        <mat-select required
+                    [value]="state.organisation"
+                    (selectionChange)="onOrganisationChange($event.value)">
+          @if (organisations === null && !failed['Organisation']) {
+          <mat-option disabled>{{'simple.loading' | t}}</mat-option>
+          }
+          @if (failed['Organisation']) {
+          <mat-option disabled>{{'simple.loadFailed' | t}}</mat-option>
+          }
+          @for (option of organisations ?? []; track option.value) {
+          <mat-option [value]="option.value">{{option.label}}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="col-md-2">
+      <mat-form-field appearance="fill"
+                      class="app-form-field-full-width"
+                      subscriptSizing="dynamic">
+        <mat-label>{{'simple.from' | t}}</mat-label>
+        <input matInput
+               type="date"
+               [value]="state.from"
+               (change)="update({ from: $any($event.target).value })">
+      </mat-form-field>
+    </div>
+
+    <div class="col-md-2">
+      <mat-form-field appearance="fill"
+                      class="app-form-field-full-width"
+                      subscriptSizing="dynamic">
+        <mat-label>{{'simple.to' | t}}</mat-label>
+        <input matInput
+               type="date"
+               [value]="state.to"
+               (change)="update({ to: $any($event.target).value })">
+        @if (periodError) {
+        <mat-hint class="app-simple-error">{{'period.errorOrder' | t}}</mat-hint>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="col-md-4">
+      <app-reference-picker [label]="'simple.compartments' | t"
+                            [placeholder]="'simple.placeholder' | t"
+                            [options]="compartments"
+                            [loadFailed]="!!failed['Compartment']"
+                            [selected]="state.compartments"
+                            (selectedChange)="update({ compartments: $event })">
+      </app-reference-picker>
+    </div>
+
+    <div class="col-md-6">
+      <app-reference-picker [label]="'simple.packages' | t"
+                            [placeholder]="'simple.placeholder' | t"
+                            [options]="measurementPackages"
+                            [loadFailed]="!!failed['MeasurementPackage']"
+                            [selected]="state.measurementPackages"
+                            (selectedChange)="update({ measurementPackages: $event })">
+      </app-reference-picker>
+    </div>
+
+    <div class="col-md-6">
+      <app-reference-picker [label]="'simple.quantities' | t"
+                            [placeholder]="'simple.placeholder' | t"
+                            [options]="quantities"
+                            [loadFailed]="!!failed['Quantity']"
+                            [selected]="state.quantities"
+                            (selectedChange)="update({ quantities: $event })">
+      </app-reference-picker>
+    </div>
+
+    <div class="col-md-6">
+      <app-reference-picker [label]="'simple.objects' | t"
+                            [placeholder]="'simple.placeholder' | t"
+                            [hint]="objectsHint"
+                            [options]="measurementObjects"
+                            [disabled]="!state.organisation"
+                            [loadFailed]="!!failed['MeasurementObject']"
+                            [selected]="state.measurementObjects"
+                            (selectedChange)="update({ measurementObjects: $event })">
+      </app-reference-picker>
+    </div>
+
+    <div class="col-md-6">
+      <app-reference-picker [label]="'simple.parameters' | t"
+                            [placeholder]="'simple.searchPlaceholder' | t"
+                            [hint]="'simple.parametersHint' | t"
+                            [search]="searchParameters"
+                            [selected]="state.parameters"
+                            (selectedChange)="update({ parameters: $event })">
+      </app-reference-picker>
+    </div>
+  </div>
+
+  <div class="row gy-2 align-items-center app-simple-footer">
+    <div class="col app-simple-count"
+         aria-live="polite">
+      @switch (countState.kind) {
+      @case ('needsOrganisation') {
+      <span>{{'simple.countNeedsOrganisation' | t}}</span>
+      }
+      @case ('counting') {
+      <span>{{'simple.counting' | t}}</span>
+      }
+      @case ('count') {
+      <strong>{{'simple.count' | t: { count: $any(countState).count } }}</strong>
+      }
+      @case ('failed') {
+      <span class="app-simple-error">{{'simple.countFailed' | t: { reason: ($any(countState).reasonKey | t) } }}</span>
+      }
+      }
+    </div>
+    <div class="col-auto">
+      <button mat-button
+              type="button"
+              (click)="clear()">
+        {{'simple.clear' | t}}
+      </button>
+    </div>
+    <div class="col-auto">
+      <button mat-raised-button
+              type="button"
+              color="primary"
+              [disabled]="busy || !state.organisation"
+              [title]="'simple.showTitle' | t"
+              (click)="show.emit()">
+        {{'simple.show' | t}}
+      </button>
+    </div>
+    <div class="col-auto">
+      <button mat-raised-button
+              type="button"
+              [disabled]="busy || !state.organisation"
+              [title]="'simple.fetchAllTitle' | t"
+              (click)="fetchAll.emit()">
+        {{'simple.fetchAll' | t}}
+      </button>
+    </div>
+  </div>
+</section>
