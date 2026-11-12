@@ -19,6 +19,7 @@ import { keepVisibleColumns, withCombinedValue } from './utils/table-columns';
 import { fieldDisplayName } from './utils/field-labels';
 import { periodBounds } from './utils/period';
 import { toDateTimeOffsetLiteral } from './utils/odata-value';
+import { ErrorExplanation, explainResponse } from './utils/error-hints';
 import { CsvFormat, csvFileName, toCsv } from './utils/csv';
 import { readCount, readNextLink, readRecords, withCount, withMinimumTop } from './utils/odata-url';
 
@@ -109,6 +110,10 @@ export class AppComponent implements OnInit, OnDestroy {
   periodFrom: string = '';
   periodTo: string = '';
   periodError: string | null = null;
+
+  // Explanation of an error response
+  hasRequested: boolean = false;
+  problem: ErrorExplanation | null = null;
 
   @ViewChild(MatPaginator) set tablePaginator(paginator: MatPaginator | undefined) {
     if (paginator) {
@@ -715,6 +720,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   //request
   get(): void {
+    this.hasRequested = true;
     this.loadingResult = true;
     this.request$ = this.service
       .get(this.url, this.apiKey, this.coordinateSystem).pipe(takeUntil(this.destroySubscriptions$))
@@ -737,6 +743,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   getNext(): void {
     if (this.nextUrl) {
+      this.hasRequested = true;
       this.loadingResult = true;
       this.request$ = this.service
         .get(this.nextUrl, this.apiKey, this.coordinateSystem).pipe(takeUntil(this.destroySubscriptions$))
@@ -783,6 +790,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   /** Rebuilds the flat table rows from the current result. */
   refreshTable(): void {
+    this.problem = this.hasRequested ? explainResponse(this.result) : null;
     this.tableRows = readRecords(this.result).map(record => withCombinedValue(flattenRecord(record)));
     this.tableColumns = collectColumns(this.tableRows);
     this.visibleColumns = keepVisibleColumns(this.visibleColumns, this.endPoint?.url ?? '', this.tableColumns);
@@ -801,6 +809,7 @@ export class AppComponent implements OnInit, OnDestroy {
    * records is reached. The records are combined into one result, which can be exported.
    */
   fetchAll(): void {
+    this.hasRequested = true;
     this.loadingResult = true;
     this.fetchingAll = true;
     this.fetchAllRecords = [];

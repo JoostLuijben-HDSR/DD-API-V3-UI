@@ -416,6 +416,25 @@
           </div>
           }
 
+          @if (problem && !loadingResult) {
+          <div class="col-12">
+            <div class="app-problem"
+                 role="alert">
+              <mat-icon class="app-problem-icon">error_outline</mat-icon>
+              <div>
+                <div class="app-problem-title">{{problem.title}}</div>
+                <div>{{problem.hint}}</div>
+                @if (problem.details) {
+                <div class="app-problem-details">Message from the service: {{problem.details}}</div>
+                }
+                @if (problem.requestId) {
+                <div class="app-problem-details">RequestId: {{problem.requestId}}</div>
+                }
+              </div>
+            </div>
+          </div>
+          }
+
           @if (result) {
           <div class="col-12">
             @if (loadingResult && !fetchingAll) {

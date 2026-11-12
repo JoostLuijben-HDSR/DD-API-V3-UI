@@ -27,3 +27,27 @@
 .app-period-error {
   color: #b00020;
 }
+
+.app-problem {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  border-left: 4px solid #b00020;
+  background-color: #fdecee;
+}
+
+.app-problem-icon {
+  color: #b00020;
+  flex: none;
+}
+
+.app-problem-title {
+  font-weight: 500;
+}
+
+.app-problem-details {
+  margin-top: 4px;
+  font-size: 0.9em;
+  color: rgba(0, 0, 0, 0.6);
+}
