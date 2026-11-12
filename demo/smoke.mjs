@@ -89,6 +89,23 @@ try {
   const urlWithLocations = await urlText();
   check('the chosen locations are in the filter', urlWithLocations.includes('Foi/Code in ('), urlWithLocations.slice(0, 200));
   await picker('Meetlocatie').locator('mat-chip-row').first().locator('button').click();
+
+  // The large window for long lists
+  await picker('Meetlocatie').locator('button.app-picker-open').click();
+  const dialog = page.locator('mat-dialog-container');
+  await dialog.waitFor({ timeout: 10000 });
+  await dialog.locator('input').first().fill('zwarteweg');
+  await page.waitForTimeout(800);
+  const dialogRows = await dialog.locator('mat-checkbox').count();
+  check('the large window searches the list', dialogRows >= 1, `${dialogRows} rows`);
+  await shot('1b-dialog-nl.png');
+  await dialog.locator('mat-checkbox').first().click();
+  const applyText = (await dialog.getByRole('button', { name: /Toepassen/ }).innerText()).trim();
+  await dialog.getByRole('button', { name: /Toepassen/ }).click();
+  await dialog.waitFor({ state: 'detached', timeout: 10000 });
+  const moreChip = picker('Meetlocatie').locator('.app-picker-more-chip');
+  check('choices from the window are applied, and many chips are summarised',
+    await moreChip.count() === 1, `${applyText}; ${(await moreChip.innerText().catch(() => '')).trim()}`);
   await page.waitForTimeout(500);
 
   await picker('Taxon of parameter').locator('input').click();
