@@ -21,6 +21,7 @@ export class FilterItemValueComponent {
   @Input() endPoint!: string;
   @Input() inputTypeMapping!: any;
   @Input() filterItemChange$!: Subject<number>;
+  @Input() valueLabel: string = 'Value';
   @Output() valueChange: EventEmitter<any> = new EventEmitter<any>();  
 
   destroySubscriptions$ = new Subject<void>();

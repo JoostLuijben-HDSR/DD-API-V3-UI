@@ -2,7 +2,7 @@
   @case ('autocomplete') {
 <mat-form-field appearance="fill"
                 class="app-form-field-full-width">
-  <mat-label>Value</mat-label>
+  <mat-label>{{valueLabel}}</mat-label>
   <input type="text"
          matInput
          [value]="filterItem.value"
@@ -22,7 +22,7 @@
   @case ('multiselect') {
 <mat-form-field appearance="fill"
                 class="app-form-field-full-width">
-  <mat-label>Value</mat-label>
+  <mat-label>{{valueLabel}}</mat-label>
   <input type="text"
          matInput
          [value]="filterItem.value"
@@ -41,7 +41,7 @@
   @case ('checkbox') {
 <mat-form-field appearance="fill"
                 class="app-form-field-full-width">
-  <mat-label>Value</mat-label>
+  <mat-label>{{valueLabel}}</mat-label>
   <mat-select [(value)]="filterItem.value"
               (selectionChange)="onValueChange($event)"
               [disabled]="filterItem.property.name == ''">
@@ -54,7 +54,7 @@
   @default {
 <mat-form-field appearance="fill"
                 class="app-form-field-full-width">
-  <mat-label>Value</mat-label>
+  <mat-label>{{valueLabel}}</mat-label>
   <input matInput
          [type]="['in', 'notin', 'contains'].includes(filterItem.comparer.value) ? 'text' : inputType"
          [(ngModel)]="filterItem.value"

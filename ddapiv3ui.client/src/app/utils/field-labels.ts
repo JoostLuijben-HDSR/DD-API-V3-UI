@@ -1,94 +1,96 @@
 /**
- * Readable Dutch names (Aquo / IM Metingen terms) for DD-API fields, so that users who
- * know the water management terms can find the right field. The technical name is
- * always shown as well.
+ * Readable names for DD-API fields: Dutch (Aquo / IM Metingen terms) and English.
+ * The technical name is always shown as well, so users can match it with the URL.
  */
 
-const LABELS: Record<string, string> = {
+import type { Lang } from './i18n';
+
+/** [Dutch, English] per field path. */
+const LABELS: Record<string, [string, string]> = {
   // Observation
-  'ObservationType': 'Observatietype',
-  'Type': 'Type',
-  'ResultTime': 'Resultaattijd',
-  'PhenomenonTime/BeginPosition': 'Meetdatum/-tijd (begin)',
-  'PhenomenonTime/EndPosition': 'Meetdatum/-tijd (eind)',
-  'ValidTime/BeginPosition': 'Geldig vanaf',
-  'ValidTime/EndPosition': 'Geldig tot',
+  'ObservationType': ['Observatietype', 'Observation type'],
+  'Type': ['Type', 'Type'],
+  'ResultTime': ['Resultaattijd', 'Result time'],
+  'PhenomenonTime/BeginPosition': ['Meetdatum/-tijd (begin)', 'Measurement time (begin)'],
+  'PhenomenonTime/EndPosition': ['Meetdatum/-tijd (eind)', 'Measurement time (end)'],
+  'ValidTime/BeginPosition': ['Geldig vanaf', 'Valid from'],
+  'ValidTime/EndPosition': ['Geldig tot', 'Valid until'],
 
   // Feature of interest
-  'Foi/Code': 'Meetobject (code)',
-  'Foi/Name': 'Meetobject (naam)',
-  'Foi/Geography': 'Meetobject (locatie)',
-  'Foi/Geography/X': 'Meetobject (x)',
-  'Foi/Geography/Y': 'Meetobject (y)',
-  'Foi/MonitoringNetworks': 'Meetnetten',
+  'Foi/Code': ['Meetobject (code)', 'Measurement object (code)'],
+  'Foi/Name': ['Meetobject (naam)', 'Measurement object (name)'],
+  'Foi/Geography': ['Meetobject (locatie)', 'Measurement object (location)'],
+  'Foi/Geography/X': ['Meetobject (x)', 'Measurement object (x)'],
+  'Foi/Geography/Y': ['Meetobject (y)', 'Measurement object (y)'],
+  'Foi/MonitoringNetworks': ['Meetnetten', 'Monitoring networks'],
 
   // Parameter
-  'Parameter/Organisation': 'Organisatie (waterbeheerder)',
-  'Parameter/OrganisationNamespace': 'Organisatie (namespace)',
-  'Parameter/Supplier': 'Leverancier',
-  'Parameter/MeasurementPackage': 'Meetpakket',
-  'Parameter/AnalysisPackage': 'Analysepakket',
-  'Parameter/Quantity': 'Grootheid (of typering)',
-  'Parameter/Parameter': 'Parameter / biotaxon',
-  'Parameter/ParameterType': 'Parametertype',
-  'Parameter/Compartment': 'Compartiment',
-  'Parameter/Purpose': 'Meetdoel',
-  'Parameter/Capacity': 'Hoedanigheid',
-  'Parameter/LimitSymbol': 'Limietsymbool',
-  'Parameter/TwnCode': 'TWN-code',
-  'Parameter/TaxonGroup': 'Taxongroep',
-  'Parameter/TaxonType': 'Taxontype',
-  'Parameter/TaxonRank': 'Taxonrang',
-  'Parameter/TaxonStatus': 'Taxonstatus',
-  'Parameter/TaxonAuthors': 'Taxonauteurs',
-  'Parameter/LifeStage': 'Levensstadium',
-  'Parameter/LifeForm': 'Levensvorm',
-  'Parameter/Gender': 'Geslacht',
-  'Parameter/Appearance': 'Verschijningsvorm',
-  'Parameter/Behaviour': 'Gedrag',
-  'Parameter/LengthClass': 'Lengteklasse',
-  'Parameter/Organ': 'Orgaan',
-  'Parameter/Statistic': 'Statistische parameter',
-  'Parameter/Condition': 'Conditie',
-  'Parameter/MeasurementPosition': 'Meetpositie',
-  'Parameter/Sampler': 'Monsternemer',
-  'Parameter/Checker': 'Controleur',
-  'Parameter/CasNumber': 'CAS-nummer',
-  'Parameter/GrainSizeFraction': 'Korrelgroottefractie',
-  'Parameter/SamplingMethod': 'Bemonsteringsmethode',
-  'Parameter/AnalysisMethod': 'Analysemethode',
-  'Parameter/ValuationMethod': 'Waardebepalingsmethode',
-  'Parameter/ValuationTechnique': 'Waardebepalingstechniek',
-  'Parameter/ValueProcessingMethod': 'Waardebewerkingsmethode',
+  'Parameter/Organisation': ['Organisatie (waterbeheerder)', 'Organisation (water authority)'],
+  'Parameter/OrganisationNamespace': ['Organisatie (namespace)', 'Organisation (namespace)'],
+  'Parameter/Supplier': ['Leverancier', 'Supplier'],
+  'Parameter/MeasurementPackage': ['Meetpakket', 'Measurement package'],
+  'Parameter/AnalysisPackage': ['Analysepakket', 'Analysis package'],
+  'Parameter/Quantity': ['Grootheid (of typering)', 'Quantity (or classification)'],
+  'Parameter/Parameter': ['Parameter / biotaxon', 'Parameter / taxon'],
+  'Parameter/ParameterType': ['Parametertype', 'Parameter type'],
+  'Parameter/Compartment': ['Compartiment', 'Compartment'],
+  'Parameter/Purpose': ['Meetdoel', 'Purpose'],
+  'Parameter/Capacity': ['Hoedanigheid', 'Capacity'],
+  'Parameter/LimitSymbol': ['Limietsymbool', 'Limit symbol'],
+  'Parameter/TwnCode': ['TWN-code', 'TWN code'],
+  'Parameter/TaxonGroup': ['Taxongroep', 'Taxon group'],
+  'Parameter/TaxonType': ['Taxontype', 'Taxon type'],
+  'Parameter/TaxonRank': ['Taxonrang', 'Taxon rank'],
+  'Parameter/TaxonStatus': ['Taxonstatus', 'Taxon status'],
+  'Parameter/TaxonAuthors': ['Taxonauteurs', 'Taxon authors'],
+  'Parameter/LifeStage': ['Levensstadium', 'Life stage'],
+  'Parameter/LifeForm': ['Levensvorm', 'Life form'],
+  'Parameter/Gender': ['Geslacht', 'Gender'],
+  'Parameter/Appearance': ['Verschijningsvorm', 'Appearance'],
+  'Parameter/Behaviour': ['Gedrag', 'Behaviour'],
+  'Parameter/LengthClass': ['Lengteklasse', 'Length class'],
+  'Parameter/Organ': ['Orgaan', 'Organ'],
+  'Parameter/Statistic': ['Statistische parameter', 'Statistic'],
+  'Parameter/Condition': ['Conditie', 'Condition'],
+  'Parameter/MeasurementPosition': ['Meetpositie', 'Measurement position'],
+  'Parameter/Sampler': ['Monsternemer', 'Sampler'],
+  'Parameter/Checker': ['Controleur', 'Checker'],
+  'Parameter/CasNumber': ['CAS-nummer', 'CAS number'],
+  'Parameter/GrainSizeFraction': ['Korrelgroottefractie', 'Grain size fraction'],
+  'Parameter/SamplingMethod': ['Bemonsteringsmethode', 'Sampling method'],
+  'Parameter/AnalysisMethod': ['Analysemethode', 'Analysis method'],
+  'Parameter/ValuationMethod': ['Waardebepalingsmethode', 'Valuation method'],
+  'Parameter/ValuationTechnique': ['Waardebepalingstechniek', 'Valuation technique'],
+  'Parameter/ValueProcessingMethod': ['Waardebewerkingsmethode', 'Value processing method'],
 
   // Metadata
-  'Metadata/Projects': 'Projecten',
-  'Metadata/SampleReference': 'Monsterreferentie',
-  'Metadata/ObservationComment': 'Opmerking meting',
-  'Metadata/CollectionComment': 'Opmerking collectie',
-  'Metadata/SetComment': 'Opmerking meetset',
-  'Metadata/ModifiedOn': 'Laatst gewijzigd',
-  'Metadata/BaseUnit': 'Basiseenheid',
-  'Metadata/BaseValue': 'Basiswaarde',
+  'Metadata/Projects': ['Projecten', 'Projects'],
+  'Metadata/SampleReference': ['Monsterreferentie', 'Sample reference'],
+  'Metadata/ObservationComment': ['Opmerking meting', 'Observation comment'],
+  'Metadata/CollectionComment': ['Opmerking collectie', 'Collection comment'],
+  'Metadata/SetComment': ['Opmerking meetset', 'Set comment'],
+  'Metadata/ModifiedOn': ['Laatst gewijzigd', 'Last modified'],
+  'Metadata/BaseUnit': ['Basiseenheid', 'Base unit'],
+  'Metadata/BaseValue': ['Basiswaarde', 'Base value'],
 
   // Result
-  'Result/Measure/Value': 'Waarde (numeriek)',
-  'Result/Measure/Uom': 'Eenheid',
-  'Result/Vocab/Vocabulary': 'Typering',
-  'Result/Vocab/Term': 'Waarde (typering)',
-  'Result/Vocab/Verb': 'Waarde (typering)',
-  'Result/Count': 'Aantal',
-  'Result/Truth': 'Waar/onwaar',
+  'Result/Measure/Value': ['Waarde (numeriek)', 'Value (numeric)'],
+  'Result/Measure/Uom': ['Eenheid', 'Unit'],
+  'Result/Vocab/Vocabulary': ['Typering', 'Classification'],
+  'Result/Vocab/Term': ['Waarde (typering)', 'Value (classification)'],
+  'Result/Vocab/Verb': ['Waarde (typering)', 'Value (classification)'],
+  'Result/Count': ['Aantal', 'Count'],
+  'Result/Truth': ['Waar/onwaar', 'True/false'],
 
   // Combined table columns
-  'Value': 'Waarde',
-  'Unit': 'Eenheid',
+  'Value': ['Waarde', 'Value'],
+  'Unit': ['Eenheid', 'Unit'],
 
   // References
-  'Code': 'Code',
-  'Name': 'Omschrijving',
-  'Description': 'Omschrijving',
-  'Organisation': 'Organisatie'
+  'Code': ['Code', 'Code'],
+  'Name': ['Omschrijving', 'Description'],
+  'Description': ['Omschrijving', 'Description'],
+  'Organisation': ['Organisatie', 'Organisation']
 };
 
 /** Normalises table column names (`Foi.Code`) to property paths (`Foi/Code`). */
@@ -96,13 +98,14 @@ function toPath(name: string): string {
   return name.replace(/\./g, '/');
 }
 
-/** Returns the Dutch name of a field, or null when there is none. */
-export function fieldLabel(name: string): string | null {
-  return LABELS[toPath(name)] ?? null;
+/** Returns the readable name of a field, or null when there is none. */
+export function fieldLabel(name: string, lang: Lang = 'nl'): string | null {
+  const labels = LABELS[toPath(name)];
+  return labels ? labels[lang === 'en' ? 1 : 0] : null;
 }
 
 /** Text for selection lists: "Meetpakket (Parameter/MeasurementPackage)". */
-export function fieldDisplayName(name: string): string {
-  const label = fieldLabel(name);
+export function fieldDisplayName(name: string, lang: Lang = 'nl'): string {
+  const label = fieldLabel(name, lang);
   return label && label !== name ? `${label} (${name})` : name;
 }

@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginatorIntl, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -18,12 +18,20 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgxJsonViewerModule } from 'ngx-json-viewer';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { FilterItemValueComponent } from './components/filter-item-value/filter-item-value.component';
+import { TranslatePipe } from './i18n/translate.pipe';
+import { MatChipsModule } from '@angular/material/chips';
+import { ReferencePickerComponent } from './components/simple-search/reference-picker.component';
+import { SimpleSearchComponent } from './components/simple-search/simple-search.component';
+import { TranslatedPaginatorIntl } from './i18n/translated-paginator-intl';
 import { MatExpansionModule } from '@angular/material/expansion';
 
 @NgModule({
   declarations: [
     AppComponent,
-    FilterItemValueComponent
+    FilterItemValueComponent,
+    TranslatePipe,
+    ReferencePickerComponent,
+    SimpleSearchComponent
   ],
   imports: [
     BrowserModule,
@@ -43,10 +51,12 @@ import { MatExpansionModule } from '@angular/material/expansion';
     MatProgressBarModule,
     MatAutocompleteModule,
     MatExpansionModule,
+    MatChipsModule,
     NgxJsonViewerModule
   ],
   providers: [
-    provideAnimationsAsync()
+    provideAnimationsAsync(),
+    { provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl }
   ],
   bootstrap: [
     AppComponent

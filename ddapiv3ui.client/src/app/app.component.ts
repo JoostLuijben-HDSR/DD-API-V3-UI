@@ -20,6 +20,8 @@ import { fieldDisplayName } from './utils/field-labels';
 import { periodBounds } from './utils/period';
 import { toDateTimeOffsetLiteral } from './utils/odata-value';
 import { ErrorExplanation, explainResponse } from './utils/error-hints';
+import { I18nService } from './i18n/i18n.service';
+import { Lang, LANGS } from './utils/i18n';
 import { CsvFormat, csvFileName, toCsv } from './utils/csv';
 import { readCount, readNextLink, readRecords, withCount, withMinimumTop } from './utils/odata-url';
 
@@ -83,10 +85,15 @@ export class AppComponent implements OnInit, OnDestroy {
   // Fetch all pages and CSV export
   maxRecordsOptions: number[] = [10000, 50000, 100000, 250000];
   maxRecords: number = 50000;
-  csvFormats: { value: CsvFormat, text: string }[] = [
-    { value: 'excel-nl', text: 'Excel (semicolon, decimal comma)' },
-    { value: 'standard', text: 'Standard (comma, decimal point)' }
+  csvFormats: { value: CsvFormat, textKey: string }[] = [
+    { value: 'excel-nl', textKey: 'action.csvExcel' },
+    { value: 'standard', textKey: 'action.csvStandard' }
   ];
+  readonly langs: Lang[] = LANGS;
+
+  // Simple search (observations)
+  simpleFilter: string = '';
+  readonly simpleSearchPageSize: number = 100;
   csvFormat: CsvFormat = 'excel-nl';
   fetchingAll: boolean = false;
   fetchedCount: number = 0;
@@ -364,7 +371,7 @@ export class AppComponent implements OnInit, OnDestroy {
   outputTypeValueConvertersMapping: Record<string, ValueConverter[]> = {};
   inputTypeMapping: Record<string, string> = {};
 
-  constructor(private service: AppService) { }
+  constructor(private service: AppService, public i18n: I18nService) { }
 
   //component
   ngOnInit(): void {
@@ -618,12 +625,12 @@ export class AppComponent implements OnInit, OnDestroy {
       return;
     }
     if (!this.periodFrom && !this.periodTo) {
-      this.periodError = 'Choose a start date, an end date or both.';
+      this.periodError = 'period.errorEmpty';
       return;
     }
     const bounds = periodBounds(this.periodFrom || null, this.periodTo || null);
     if (!bounds) {
-      this.periodError = 'The end date is before the start date.';
+      this.periodError = 'period.errorOrder';
       return;
     }
     this.periodError = null;
@@ -637,11 +644,27 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   propertyDisplayName(property: Property): string {
-    return fieldDisplayName(property.name);
+    return fieldDisplayName(property.name, this.i18n.lang);
   }
 
   columnDisplayName(column: string): string {
-    return fieldDisplayName(column);
+    return fieldDisplayName(column, this.i18n.lang);
+  }
+
+  setLang(lang: Lang): void {
+    this.i18n.setLang(lang);
+  }
+
+  problemText(part: 'title' | 'hint'): string {
+    if (!this.problem) {
+      return '';
+    }
+    const field = this.problem.field;
+    return this.i18n.t(`${this.problem.key}.${part}`, {
+      field: field ? fieldDisplayName(field, this.i18n.lang) : null,
+      path: field,
+      range: this.problem.range
+    });
   }
 
   //functions
@@ -678,20 +701,51 @@ export class AppComponent implements OnInit, OnDestroy {
       this.url += `&$select=${this.selectProperties.map(p => p.name).join(',')}`;
     }
     let validFilterItems = this.filterItems.filter((item, index) => this.validateFilterItem(item, index));
+    let advancedFilter = '';
     if (validFilterItems?.length > 0) {
-      this.url += '&$filter=';
       validFilterItems.forEach((filterItem, index, all) => {
         let propertyFormat = filterItem.propertyConverter.data?.format ?? '<property>';
         let valueFormat = filterItem.valueConverter.data?.format ?? '<value>';
         let valueType = filterItem.propertyConverter.data?.outputType ?? filterItem.property.type;
         let value = this.formatFilterValue(filterItem.value, valueType);
         let filterUrl = filterItem.comparer.data.format.replace('<propertyformat>', propertyFormat.replace('<property>', filterItem.property.name).replace('<propertyconverterinputvalue>', filterItem.propertyConverter.data?.inputValue)).replace('<valueformat>', valueFormat.replace('<value>', value));
-        this.url += filterUrl;
+        advancedFilter += filterUrl;
         if (index < all.length - 1) {
-          this.url += ` ${filterItem.logical} `;
+          advancedFilter += ` ${filterItem.logical} `;
         }
       })
     }
+    const simpleFilter = this.showSimpleSearch ? this.simpleFilter : '';
+    const parts = [simpleFilter, simpleFilter && advancedFilter ? `(${advancedFilter})` : advancedFilter].filter(part => !!part);
+    if (parts.length > 0) {
+      this.url += '&$filter=' + parts.join(' and ');
+    }
+  }
+
+  get showSimpleSearch(): boolean {
+    return this.endPoint?.url === 'observations';
+  }
+
+  onSimpleFilterChange(filter: string): void {
+    this.simpleFilter = filter;
+    this.generateUrl();
+  }
+
+  /** Shows the first page of the simple search in the table. */
+  showSimpleResults(): void {
+    if (this.pageSize < this.simpleSearchPageSize) {
+      this.pageSize = this.simpleSearchPageSize;
+    }
+    this.viewMode = 'table';
+    this.generateUrl();
+    this.get();
+  }
+
+  /** Fetches all observations of the simple search. */
+  fetchAllSimpleResults(): void {
+    this.viewMode = 'table';
+    this.generateUrl();
+    this.fetchAll();
   }
 
   formatFilterValue(value: any, valueType: string): any {
