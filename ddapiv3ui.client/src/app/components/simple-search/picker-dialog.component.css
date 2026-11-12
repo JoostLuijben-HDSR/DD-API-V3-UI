@@ -1,0 +1,128 @@
+.app-dialog-content {
+  max-height: none;
+  height: 65vh;
+}
+
+.app-dialog-columns {
+  display: flex;
+  gap: 24px;
+  height: 100%;
+}
+
+.app-dialog-list {
+  flex: 2 1 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-dialog-search {
+  width: 100%;
+}
+
+.app-dialog-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  min-height: 40px;
+}
+
+.app-dialog-spacer {
+  flex: 1;
+}
+
+.app-dialog-count {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.app-dialog-viewport {
+  flex: 1;
+  min-height: 200px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+
+.app-dialog-row {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.app-dialog-group {
+  font-weight: 500;
+  color: #3f51b5;
+  padding-top: 8px;
+}
+
+.app-dialog-detail {
+  margin-left: 8px;
+  font-size: 0.85em;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.app-dialog-single {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.app-dialog-single-chosen {
+  background-color: rgba(63, 81, 181, 0.12);
+}
+
+.app-dialog-chosen {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  padding-left: 16px;
+}
+
+.app-dialog-chosen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-dialog-chosen-header h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.app-dialog-chosen-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.app-dialog-chosen-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.app-dialog-empty {
+  color: rgba(0, 0, 0, 0.6);
+  margin: 8px 0;
+}
+
+@media (max-width: 800px) {
+  .app-dialog-columns {
+    flex-direction: column;
+  }
+
+  .app-dialog-chosen {
+    border-left: none;
+    padding-left: 0;
+    max-height: 30%;
+  }
+}

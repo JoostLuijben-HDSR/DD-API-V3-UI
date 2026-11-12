@@ -5,7 +5,7 @@
   <mat-chip-grid #chipGrid
                  [disabled]="disabled"
                  [attr.aria-label]="label">
-    @for (option of selected; track option.value) {
+    @for (option of visibleChips; track option.value) {
     <mat-chip-row (removed)="remove(option)">
       {{option.label}}
       <button matChipRemove
@@ -15,14 +15,32 @@
       </button>
     </mat-chip-row>
     }
+    @if (hiddenChipCount > 0) {
+    <button mat-stroked-button
+            type="button"
+            class="app-picker-more-chip"
+            (click)="openDialog(); $event.stopPropagation()">
+      {{'list.moreChips' | t: { count: hiddenChipCount } }}
+    </button>
+    }
     <input #textInput
            [placeholder]="selected.length ? '' : placeholder"
            [formControl]="textControl"
            [matChipInputFor]="chipGrid"
            [matAutocomplete]="auto">
   </mat-chip-grid>
-  <mat-icon matSuffix>expand_more</mat-icon>
+  <button mat-icon-button
+          matSuffix
+          type="button"
+          class="app-picker-open"
+          [disabled]="disabled"
+          [title]="'dialog.open' | t"
+          [attr.aria-label]="('dialog.open' | t) + ': ' + label"
+          (click)="openDialog(); $event.stopPropagation()">
+    <mat-icon>open_in_full</mat-icon>
+  </button>
   <mat-autocomplete #auto="matAutocomplete"
+                    class="app-picker-panel"
                     [displayWith]="displayFn"
                     (opened)="onPanelOpened()"
                     (closed)="onPanelClosed()"
