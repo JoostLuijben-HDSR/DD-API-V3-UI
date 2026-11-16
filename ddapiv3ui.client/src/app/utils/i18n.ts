@@ -139,6 +139,16 @@ const NL: Record<string, string> = {
   'simple.fetchAll': 'ALLES OPHALEN',
   'simple.fetchAllTitle': 'Haalt alle metingen op (tot het maximum); daarna kun je ze als CSV downloaden',
   'simple.clear': 'WIS ALLES',
+  'list.selectAll': 'Alle {count} treffers selecteren',
+  'list.more': 'Toon {count} meer',
+  'list.recent': 'Recent gebruikt',
+  'list.noData': 'geen gegevens',
+  'list.showUnavailable': 'Toon ook {count} zonder gegevens voor jouw key',
+  'list.hideUnavailable': 'Verberg opties zonder gegevens',
+  'list.checking': 'Beschikbaarheid controleren… {done} van {total}',
+  'list.checked': '{count} met gegevens',
+  'simple.organisationNoKey': 'Vul je API-key in om alleen waterbeheerders met gegevens te zien.',
+  'simple.availabilityHint': 'Opties zonder gegevens bij deze waterbeheerder staan grijs onderaan.',
   'advanced.title': 'Geavanceerd',
   'advanced.description': 'Eigen filters, kolommen ($select), URL en headers'
 };
@@ -262,6 +272,16 @@ const EN: Record<string, string> = {
   'simple.fetchAll': 'FETCH ALL',
   'simple.fetchAllTitle': 'Fetches all observations (up to the maximum); you can then download them as CSV',
   'simple.clear': 'CLEAR ALL',
+  'list.selectAll': 'Select all {count} matches',
+  'list.more': 'Show {count} more',
+  'list.recent': 'Recently used',
+  'list.noData': 'no data',
+  'list.showUnavailable': 'Also show {count} without data for your key',
+  'list.hideUnavailable': 'Hide options without data',
+  'list.checking': 'Checking availability… {done} of {total}',
+  'list.checked': '{count} with data',
+  'simple.organisationNoKey': 'Enter your API key to see only water authorities with data.',
+  'simple.availabilityHint': 'Options without data at this water authority are greyed out at the bottom.',
   'advanced.title': 'Advanced',
   'advanced.description': 'Custom filters, columns ($select), URL and headers'
 };

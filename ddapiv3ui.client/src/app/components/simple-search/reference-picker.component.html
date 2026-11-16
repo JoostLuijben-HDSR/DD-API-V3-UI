@@ -1,7 +1,7 @@
 <mat-form-field appearance="fill"
                 class="app-picker"
                 subscriptSizing="dynamic">
-  <mat-label>{{label}}</mat-label>
+  <mat-label>{{label}}@if (required) {<span aria-hidden="true">&nbsp;*</span>}</mat-label>
   <mat-chip-grid #chipGrid
                  [disabled]="disabled"
                  [attr.aria-label]="label">
@@ -23,7 +23,19 @@
   </mat-chip-grid>
   <mat-icon matSuffix>expand_more</mat-icon>
   <mat-autocomplete #auto="matAutocomplete"
-                    (optionSelected)="select($event)">
+                    [displayWith]="displayFn"
+                    (opened)="onPanelOpened()"
+                    (closed)="onPanelClosed()"
+                    (optionSelected)="onSelected($event)">
+    @if (checking) {
+    <mat-option disabled
+                class="app-picker-info">
+      <div>{{'list.checking' | t: { done: availabilityProgress?.done, total: availabilityProgress?.total } }}</div>
+      <mat-progress-bar mode="determinate"
+                        [value]="checkingPercent">
+      </mat-progress-bar>
+    </mat-option>
+    }
     @if (isLoading) {
     <mat-option disabled>{{'simple.loading' | t}}</mat-option>
     }
@@ -37,19 +49,70 @@
     <mat-option disabled>{{hint}}</mat-option>
     }
     @else {
-    @for (option of visible; track option.value) {
-    <mat-option [value]="option">
-      {{option.label}}
-      @if (option.detail) {
-      <span class="app-picker-detail">{{option.detail}}</span>
+    @if (selectAllCount > 1) {
+    <mat-option [value]="selectAllAction"
+                class="app-picker-action">
+      <mat-icon>done_all</mat-icon>
+      {{'list.selectAll' | t: { count: selectAllCount } }}
+    </mat-option>
+    }
+    @for (section of sections; track $index) {
+    @if (section.label) {
+    <mat-optgroup [label]="section.label">
+      @for (row of section.rows; track row.option.value) {
+      <mat-option [value]="row.option"
+                  [disabled]="row.state === 'no'"
+                  [class.app-picker-nodata]="row.state === 'no'">
+        @for (part of row.parts; track $index) {@if (part.match) {<strong>{{part.text}}</strong>} @else {<span>{{part.text}}</span>}}
+        @if (row.option.detail) {
+        <span class="app-picker-detail">{{row.option.detail}}</span>
+        }
+        @if (row.state === 'no') {
+        <span class="app-picker-detail">{{'list.noData' | t}}</span>
+        }
+      </mat-option>
+      }
+    </mat-optgroup>
+    }
+    @else {
+    @for (row of section.rows; track row.option.value) {
+    <mat-option [value]="row.option"
+                [disabled]="row.state === 'no'"
+                [class.app-picker-nodata]="row.state === 'no'">
+      @for (part of row.parts; track $index) {@if (part.match) {<strong>{{part.text}}</strong>} @else {<span>{{part.text}}</span>}}
+      @if (row.option.detail) {
+      <span class="app-picker-detail">{{row.option.detail}}</span>
+      }
+      @if (row.state === 'no') {
+      <span class="app-picker-detail">{{'list.noData' | t}}</span>
       }
     </mat-option>
     }
-    @if (visible.length === 0) {
+    }
+    }
+    @if (rowCount === 0) {
     <mat-option disabled>{{'simple.noMatches' | t}}</mat-option>
     }
-    @if (totalMatches > visible.length) {
-    <mat-option disabled>{{'simple.more' | t: { shown: visible.length, total: totalMatches } }}</mat-option>
+    @if (moreCount > 0) {
+    <mat-option [value]="moreAction"
+                class="app-picker-action">
+      <mat-icon>expand_more</mat-icon>
+      {{'list.more' | t: { count: moreCount } }}
+    </mat-option>
+    }
+    @if (hiddenUnavailable > 0) {
+    <mat-option [value]="toggleUnavailableAction"
+                class="app-picker-action">
+      <mat-icon>visibility</mat-icon>
+      {{'list.showUnavailable' | t: { count: hiddenUnavailable } }}
+    </mat-option>
+    }
+    @else if (showUnavailable) {
+    <mat-option [value]="toggleUnavailableAction"
+                class="app-picker-action">
+      <mat-icon>visibility_off</mat-icon>
+      {{'list.hideUnavailable' | t}}
+    </mat-option>
     }
     }
   </mat-autocomplete>

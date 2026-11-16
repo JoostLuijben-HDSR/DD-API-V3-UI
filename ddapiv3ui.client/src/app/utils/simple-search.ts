@@ -4,6 +4,7 @@
  */
 
 import { nextDay } from './period';
+import { matchOptions } from './list-search';
 
 /** One choice in a selection list. The value is sent to the service; the label is shown. */
 export interface PickerOption {
@@ -87,34 +88,12 @@ export function isPeriodValid(state: SimpleSearchState): boolean {
   return !(state.from && state.to && state.to < state.from);
 }
 
-function normalise(text: string): string {
-  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-}
-
 /**
- * Searches options on code and label, ignoring case and accents. Options whose code or
- * label starts with the text come first. Returns at most `limit` options.
+ * Searches options on code and label: several words in any order, ignoring case, accents
+ * and punctuation, best matches first. Returns at most `limit` options.
  */
 export function searchOptions(options: PickerOption[], text: string, limit: number): PickerOption[] {
-  const query = normalise(text.trim());
-  if (!query) {
-    return options.slice(0, limit);
-  }
-  const starts: PickerOption[] = [];
-  const contains: PickerOption[] = [];
-  for (const option of options) {
-    const value = normalise(option.value);
-    const label = normalise(option.label);
-    if (value.startsWith(query) || label.startsWith(query)) {
-      starts.push(option);
-    } else if (value.includes(query) || label.includes(query)) {
-      contains.push(option);
-    }
-    if (starts.length >= limit) {
-      break;
-    }
-  }
-  return [...starts, ...contains].slice(0, limit);
+  return matchOptions(options, text).slice(0, limit);
 }
 
 /** Label "Name (CODE)", or only the code when the name is empty or the same. */
