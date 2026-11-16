@@ -9,6 +9,16 @@ namespace DdApiV3UI.Server.Controllers
 	[Route("[controller]")]
 	public class DdApiController(IConfiguration configuration) : ControllerBase
 	{
+		private List<string> AllowedBaseUrls => configuration.GetSection("BaseUrls").Get<List<string>>() ?? [];
+
+		private ObjectResult UrlNotAllowed() => BadRequest(new
+		{
+			error = new
+			{
+				code = "UrlNotAllowed",
+				message = "This server only forwards requests to the configured base URLs."
+			}
+		});
 
         [Route("appsettings")]
         [HttpGet]
@@ -23,10 +33,16 @@ namespace DdApiV3UI.Server.Controllers
 
         [Route("metadata")]
 		[HttpPost]
-		public async Task<IEnumerable<CsdlProperty>> GetMetaDataAsync([FromBody] RequestParameters requestParameters)
+		public async Task<ActionResult<IEnumerable<CsdlProperty>>> GetMetaDataAsync([FromBody] RequestParameters requestParameters)
 		{
+			var metaDataUrl = $"{requestParameters.Url}/$metadata"; // Examine the $metadata manifest.
+			if (!UrlAllowList.IsAllowed(metaDataUrl, AllowedBaseUrls))
+			{
+				return UrlNotAllowed();
+			}
+
 			var client      = new HttpClient();
-			var metaDataUri = new Uri($"{requestParameters.Url}/$metadata"); // Examine the $metadata manifest.
+			var metaDataUri = new Uri(metaDataUrl);
 			var response    = await client.GetAsync(metaDataUri).ConfigureAwait(false);
 			var metaData    = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -40,7 +56,7 @@ namespace DdApiV3UI.Server.Controllers
                 }
             }
 
-			return result;
+			return Ok(result);
         }
 
 		
@@ -54,6 +70,11 @@ namespace DdApiV3UI.Server.Controllers
 				if (string.IsNullOrEmpty(queryUrl))
 				{
 					return BadRequest();
+				}
+
+				if (!UrlAllowList.IsAllowed(queryUrl, AllowedBaseUrls))
+				{
+					return UrlNotAllowed();
 				}
 
 				var queryUri = new Uri(queryUrl);
