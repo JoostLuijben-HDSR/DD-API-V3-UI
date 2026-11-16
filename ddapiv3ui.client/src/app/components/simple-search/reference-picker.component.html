@@ -1,0 +1,59 @@
+<mat-form-field appearance="fill"
+                class="app-picker"
+                subscriptSizing="dynamic">
+  <mat-label>{{label}}</mat-label>
+  <mat-chip-grid #chipGrid
+                 [disabled]="disabled"
+                 [attr.aria-label]="label">
+    @for (option of selected; track option.value) {
+    <mat-chip-row (removed)="remove(option)">
+      {{option.label}}
+      <button matChipRemove
+              type="button"
+              [attr.aria-label]="('simple.remove' | t) + ' ' + option.label">
+        <mat-icon>cancel</mat-icon>
+      </button>
+    </mat-chip-row>
+    }
+    <input #textInput
+           [placeholder]="selected.length ? '' : placeholder"
+           [formControl]="textControl"
+           [matChipInputFor]="chipGrid"
+           [matAutocomplete]="auto">
+  </mat-chip-grid>
+  <mat-icon matSuffix>expand_more</mat-icon>
+  <mat-autocomplete #auto="matAutocomplete"
+                    (optionSelected)="select($event)">
+    @if (isLoading) {
+    <mat-option disabled>{{'simple.loading' | t}}</mat-option>
+    }
+    @else if (loadFailed) {
+    <mat-option disabled>{{'simple.loadFailed' | t}}</mat-option>
+    }
+    @else if (searching) {
+    <mat-option disabled>{{'simple.searching' | t}}</mat-option>
+    }
+    @else if (needsMoreText) {
+    <mat-option disabled>{{hint}}</mat-option>
+    }
+    @else {
+    @for (option of visible; track option.value) {
+    <mat-option [value]="option">
+      {{option.label}}
+      @if (option.detail) {
+      <span class="app-picker-detail">{{option.detail}}</span>
+      }
+    </mat-option>
+    }
+    @if (visible.length === 0) {
+    <mat-option disabled>{{'simple.noMatches' | t}}</mat-option>
+    }
+    @if (totalMatches > visible.length) {
+    <mat-option disabled>{{'simple.more' | t: { shown: visible.length, total: totalMatches } }}</mat-option>
+    }
+    }
+  </mat-autocomplete>
+  @if (hint) {
+  <mat-hint>{{hint}}</mat-hint>
+  }
+</mat-form-field>

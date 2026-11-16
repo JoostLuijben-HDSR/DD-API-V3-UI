@@ -1,0 +1,9 @@
+.app-picker {
+  width: 100%;
+}
+
+.app-picker-detail {
+  margin-left: 8px;
+  font-size: 0.85em;
+  color: rgba(0, 0, 0, 0.55);
+}
