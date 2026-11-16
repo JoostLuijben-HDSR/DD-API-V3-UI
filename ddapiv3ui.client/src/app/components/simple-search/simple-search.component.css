@@ -27,3 +27,20 @@
 .app-simple-error {
   color: #b00020;
 }
+
+.app-simple-fieldset {
+  border: 1px solid #d5deeb;
+  border-radius: 6px;
+  padding: 4px 16px 16px 16px;
+  margin-bottom: 12px;
+  background-color: #ffffff;
+}
+
+.app-simple-fieldset legend {
+  float: none;
+  width: auto;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0 6px;
+  margin-bottom: 0;
+}

@@ -1,7 +1,8 @@
 import { Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
-import { Observable, of, Subject } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { I18nService } from '../../i18n/i18n.service';
 import {
@@ -9,6 +10,7 @@ import {
   rememberRecent, TextPart, withRecentFirst
 } from '../../utils/list-search';
 import { PickerOption } from '../../utils/simple-search';
+import { PickerDialogComponent, PickerDialogData } from './picker-dialog.component';
 
 export interface AvailabilityProgressInfo {
   done: number;
@@ -16,7 +18,9 @@ export interface AvailabilityProgressInfo {
 }
 
 interface PickerAction {
-  action: 'selectAll' | 'more' | 'toggleUnavailable';
+  action: 'selectAll' | 'more' | 'toggleUnavailable' | 'selectGroup';
+  /** For 'selectGroup': the options of the group. */
+  options?: PickerOption[];
 }
 
 interface Row {
@@ -28,6 +32,8 @@ interface Row {
 interface Section {
   label: string;
   rows: Row[];
+  /** For groups: action that chooses the whole group, if there is more than one option. */
+  groupAction: PickerAction | null;
 }
 
 function isAction(value: unknown): value is PickerAction {
@@ -67,6 +73,8 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
   /** Hide options without data (with a way to show them), instead of greying them out. */
   @Input() hideUnavailable: boolean = false;
   @Input() disabled: boolean = false;
+  /** Number of chips shown before the rest is summarised as "+N more". */
+  @Input() maxChips: number = 4;
   @Input() loadFailed: boolean = false;
   @Input() selected: PickerOption[] = [];
   @Output() selectedChange = new EventEmitter<PickerOption[]>();
@@ -100,7 +108,10 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
   private panelOpen: boolean = false;
   private destroy$ = new Subject<void>();
 
-  constructor(public i18n: I18nService) { }
+  private options$ = new BehaviorSubject<PickerOption[] | null>(null);
+  private availability$ = new BehaviorSubject<Record<string, Availability> | null>(null);
+
+  constructor(public i18n: I18nService, private dialog: MatDialog) { }
 
   readonly displayFn = (value: unknown): string => isAction(value) ? this.text : '';
 
@@ -142,6 +153,12 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
         this.textControl.enable({ emitEvent: false });
       }
     }
+    if (changes['options']) {
+      this.options$.next(this.options);
+    }
+    if (changes['availability']) {
+      this.availability$.next(this.availability);
+    }
     if (changes['options'] || changes['selected'] || changes['availability']) {
       this.rebuild();
     }
@@ -150,6 +167,53 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  get visibleChips(): PickerOption[] {
+    return this.selected.length > this.maxChips ? this.selected.slice(0, this.maxChips - 1) : this.selected;
+  }
+
+  get hiddenChipCount(): number {
+    return this.selected.length - this.visibleChips.length;
+  }
+
+  /** Opens the large window for choosing from the list. */
+  openDialog(): void {
+    if (this.disabled) {
+      return;
+    }
+    this.trigger?.closePanel();
+    this.opened.emit();
+    const data: PickerDialogData = {
+      title: this.label,
+      hint: this.hint,
+      multiple: this.multiple,
+      grouped: this.grouped,
+      hideUnavailable: this.hideUnavailable,
+      options$: this.options$,
+      search: this.search,
+      minSearchLength: this.minSearchLength,
+      selected: this.selected,
+      availability$: this.availability$,
+      requestCheck: options => this.shownOptions.emit(options)
+    };
+    this.dialog.open<PickerDialogComponent, PickerDialogData, PickerOption[]>(PickerDialogComponent, {
+      data,
+      width: '80vw',
+      maxWidth: '1200px',
+      autoFocus: 'first-tabbable'
+    }).afterClosed().subscribe(result => {
+      if (!result) {
+        return;
+      }
+      const before = new Set(this.selected.map(s => s.value));
+      const added = result.filter(o => !before.has(o.value)).map(o => o.value);
+      if (added.length > 0) {
+        this.recent = rememberRecent(this.recent, added.slice(0, 5));
+        this.writeRecent();
+      }
+      this.selectedChange.emit(result);
+    });
   }
 
   get isLoading(): boolean {
@@ -183,6 +247,9 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
       } else if (value.action === 'selectAll') {
         const usable = this.allMatches.filter(o => this.availability?.[o.value] !== 'no');
         this.choose(usable);
+        return;
+      } else if (value.action === 'selectGroup') {
+        this.choose((value.options ?? []).filter(o => this.availability?.[o.value] !== 'no'));
         return;
       }
       this.textControl.setValue(this.text, { emitEvent: false });
@@ -247,7 +314,7 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
     if (!this.text.trim() && this.recentKey && this.recent.length > 0 && !this.search) {
       const split = withRecentFirst(matches, this.recent);
       if (split.recent.length > 0) {
-        sections.push({ label: this.i18n.t('list.recent'), rows: split.recent.map(o => this.row(o)) });
+        sections.push({ label: this.i18n.t('list.recent'), rows: split.recent.map(o => this.row(o)), groupAction: null });
         rest = split.others;
       }
     }
@@ -255,10 +322,15 @@ export class ReferencePickerComponent implements OnInit, OnChanges, OnDestroy {
     this.moreCount = Math.min(this.pageSize, rest.length - page.length);
     if (this.grouped && !this.text.trim()) {
       for (const group of groupByCodePrefix(page)) {
-        sections.push({ label: group.label, rows: group.options.map(o => this.row(o)) });
+        const usable = group.options.filter(o => this.availability?.[o.value] !== 'no');
+        sections.push({
+          label: group.label,
+          rows: group.options.map(o => this.row(o)),
+          groupAction: this.multiple && group.label && usable.length > 1 ? { action: 'selectGroup', options: usable } : null
+        });
       }
     } else {
-      sections.push({ label: '', rows: page.map(o => this.row(o)) });
+      sections.push({ label: '', rows: page.map(o => this.row(o)), groupAction: null });
     }
     this.sections = sections;
 

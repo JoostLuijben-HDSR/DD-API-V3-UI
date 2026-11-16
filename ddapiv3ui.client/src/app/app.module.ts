@@ -20,6 +20,10 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { FilterItemValueComponent } from './components/filter-item-value/filter-item-value.component';
 import { TranslatePipe } from './i18n/translate.pipe';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { ScrollingModule } from '@angular/cdk/scrolling';
+import { PickerDialogComponent } from './components/simple-search/picker-dialog.component';
 import { ReferencePickerComponent } from './components/simple-search/reference-picker.component';
 import { SimpleSearchComponent } from './components/simple-search/simple-search.component';
 import { TranslatedPaginatorIntl } from './i18n/translated-paginator-intl';
@@ -31,7 +35,8 @@ import { MatExpansionModule } from '@angular/material/expansion';
     FilterItemValueComponent,
     TranslatePipe,
     ReferencePickerComponent,
-    SimpleSearchComponent
+    SimpleSearchComponent,
+    PickerDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -52,6 +57,9 @@ import { MatExpansionModule } from '@angular/material/expansion';
     MatAutocompleteModule,
     MatExpansionModule,
     MatChipsModule,
+    MatDialogModule,
+    MatCheckboxModule,
+    ScrollingModule,
     NgxJsonViewerModule
   ],
   providers: [

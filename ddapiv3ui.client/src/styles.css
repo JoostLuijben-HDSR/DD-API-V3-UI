@@ -21,6 +21,11 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   margin-bottom: 0;
 }
 
+/* Taller option lists for the choice fields (the panel is rendered outside the component). */
+.app-picker-panel.mat-mdc-autocomplete-panel {
+  max-height: min(60vh, 560px);
+}
+
 .app-spinner {
   margin: auto;
   width: 40px !important;
