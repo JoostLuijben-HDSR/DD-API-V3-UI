@@ -11,6 +11,7 @@ import {
 } from '../../utils/simple-search';
 import { AvailabilityCheck, AvailabilityService } from './availability.service';
 import { AvailabilityProgressInfo } from './reference-picker.component';
+import { SearchPreset } from '../../utils/code-lists';
 import { ReferenceListService } from './reference-list.service';
 
 const ORGANISATION_KEY = 'simpleSearch.organisation';
@@ -53,6 +54,8 @@ export class SimpleSearchComponent implements OnInit, OnChanges, OnDestroy {
   @Input() baseUrl: string = '';
   @Input() apiKey: string = '';
   @Input() busy: boolean = false;
+  /** Codes chosen elsewhere (in the code lists) to put into the search. */
+  @Input() preset: (SearchPreset & { id: number }) | null = null;
   @Output() filterChange = new EventEmitter<string>();
   @Output() show = new EventEmitter<void>();
   @Output() fetchAll = new EventEmitter<void>();
@@ -107,6 +110,41 @@ export class SimpleSearchComponent implements OnInit, OnChanges, OnDestroy {
     }
     if (changes['apiKey'] && !changes['apiKey'].firstChange) {
       this.apiKeyChanges$.next();
+    }
+    if (changes['preset'] && this.preset) {
+      this.applyPreset(this.preset);
+    }
+  }
+
+  /** Puts codes chosen in the code lists into the search. */
+  private applyPreset(preset: SearchPreset): void {
+    if (preset.use === 'organisation') {
+      this.onOrganisationSelection(preset.options);
+      return;
+    }
+    if (preset.organisation && preset.organisation !== this.state.organisation) {
+      const known = (this.organisations ?? []).find(o => o.value === preset.organisation);
+      this.onOrganisationSelection([known ?? { value: preset.organisation, label: preset.organisation }]);
+    }
+    const merge = (current: PickerOption[]) =>
+      [...current, ...preset.options.filter(o => !current.some(c => c.value === o.value))];
+    switch (preset.use) {
+      case 'measurementObjects':
+      case 'monitoringNetwork':
+        this.update({ measurementObjects: preset.options });
+        break;
+      case 'measurementPackages':
+        this.update({ measurementPackages: merge(this.state.measurementPackages) });
+        break;
+      case 'quantities':
+        this.update({ quantities: merge(this.state.quantities) });
+        break;
+      case 'compartments':
+        this.update({ compartments: merge(this.state.compartments) });
+        break;
+      case 'parameters':
+        this.update({ parameters: merge(this.state.parameters) });
+        break;
     }
   }
 
@@ -311,6 +349,14 @@ export class SimpleSearchComponent implements OnInit, OnChanges, OnDestroy {
       .subscribe(options => {
         this.failed['MeasurementObject'] = options === null;
         this.measurementObjects = options;
+        // Locations chosen by code only (for example from a monitoring network) get their names.
+        const byValue = new Map((options ?? []).map(o => [o.value, o]));
+        if (this.state.measurementObjects.some(o => o.label === o.value && byValue.has(o.value))) {
+          this.state = {
+            ...this.state,
+            measurementObjects: this.state.measurementObjects.map(o => o.label === o.value ? (byValue.get(o.value) ?? o) : o)
+          };
+        }
       });
   }
 

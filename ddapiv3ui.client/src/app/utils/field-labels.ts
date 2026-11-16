@@ -9,7 +9,6 @@ import type { Lang } from './i18n';
 const LABELS: Record<string, [string, string]> = {
   // Observation
   'ObservationType': ['Observatietype', 'Observation type'],
-  'Type': ['Type', 'Type'],
   'ResultTime': ['Resultaattijd', 'Result time'],
   'PhenomenonTime/BeginPosition': ['Meetdatum/-tijd (begin)', 'Measurement time (begin)'],
   'PhenomenonTime/EndPosition': ['Meetdatum/-tijd (eind)', 'Measurement time (end)'],
@@ -88,6 +87,28 @@ const LABELS: Record<string, [string, string]> = {
 
   // References
   'Code': ['Code', 'Code'],
+  'Type': ['Soort', 'Type'],
+  'ParameterType': ['Parametertype', 'Parameter type'],
+  'TaxonType': ['Taxontype', 'Taxon type'],
+  'TaxonGroup': ['Taxongroep', 'Taxon group'],
+  'TaxonRank': ['Taxonrang', 'Taxon rank'],
+  'TaxonStatus': ['Status', 'Status'],
+  'TaxonTwnCode': ['TWN-code', 'TWN code'],
+  'TaxonAuthors': ['Auteurs', 'Authors'],
+  'TaxonSynonymOf': ['Synoniem van', 'Synonym of'],
+  'TaxonParent': ['Hoger taxon', 'Parent taxon'],
+  'TaxonCitation': ['Bron', 'Citation'],
+  'TaxonLiterature': ['Literatuur', 'Literature'],
+  'ProjectStart': ['Begindatum', 'Start date'],
+  'ProjectEnd': ['Einddatum', 'End date'],
+  'KrwCode': ['KRW-code', 'WFD code'],
+  'IsReportingMeasurementObject': ['Rapportagelocatie', 'Reporting location'],
+  'Weighting': ['Weging', 'Weighting'],
+  'MeasurementObjects': ['Meetlocaties', 'Locations'],
+  'MeasurementObjectCount': ['Aantal meetlocaties', 'Number of locations'],
+  'Geography/X': ['Lengtegraad (x)', 'Longitude (x)'],
+  'Geography/Y': ['Breedtegraad (y)', 'Latitude (y)'],
+  'ModifiedOn': ['Laatst gewijzigd', 'Last modified'],
   'Name': ['Omschrijving', 'Description'],
   'Description': ['Omschrijving', 'Description'],
   'Organisation': ['Organisatie', 'Organisation']
